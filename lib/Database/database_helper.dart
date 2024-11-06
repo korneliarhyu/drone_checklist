@@ -1,3 +1,4 @@
+import 'package:drone_flight_checklist/model/checklist_form_model.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
 
 class DatabaseHelper {
@@ -22,7 +23,7 @@ class DatabaseHelper {
       templateID INTEGER,
       formName TEXT,
       updatedBy TEXT,
-      updatedDate TIMPESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       formData TEXT,
       FOREIGN KEY (templateID) REFERENCES template(templateID) ON DELETE CASCADE
       )
@@ -31,13 +32,25 @@ class DatabaseHelper {
 
   //jika database ada maka buka
   static Future<sqlite.Database> db() async {
-    return sqlite.openDatabase("drone_checklist_database", version: 1,
-        //jika tidak ada maka buat database baru
-        onCreate: (sqlite.Database database, int version) async {
-      await createTables(database);
-    });
+    return sqlite.openDatabase(
+      "drone_checklist_database", version: 1,
+      //jika tidak ada maka buat database baru
+      onCreate: (sqlite.Database database, int version) async {
+        await createTables(database);
+      },
+      onOpen: (db) async {
+        await db.execute("PRAGMA foreign_keys = ON");
+      },
+    );
   }
-  
 
+  static Future<int> createChecklistForm(ChecklistFormModel model) async {
+    final db = await DatabaseHelper.db();
 
+    return await db.insert(
+      'form',
+      model.toJson(),
+      conflictAlgorithm: sqlite.ConflictAlgorithm.replace,
+    );
+  }
 }

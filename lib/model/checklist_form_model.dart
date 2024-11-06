@@ -15,5 +15,27 @@ class ChecklistFormModel {
     required this.checklistFormData,
   });
 
-  // Add methods to convert to/from JSON if needed
+  // Convert model to JSON/Map for database
+  Map<String, dynamic> toJson() {
+    return {
+      'formId': formId,
+      'templateId': templateId,
+      'formName': formName,
+      'updatedBy': updatedBy,
+      'updatedDate': updatedDate.toIso8601String(),
+      'checklistFormData': checklistFormData,
+    };
+  }
+
+  // Create model from JSON/Map
+  factory ChecklistFormModel.fromJson(Map<String, dynamic> json) {
+    return ChecklistFormModel(
+      formId: json['formId'],
+      templateId: json['templateId'],
+      formName: json['formName'],
+      updatedBy: json['updatedBy'],
+      updatedDate: DateTime.parse(json['updatedDate']),
+      checklistFormData: Map<String, dynamic>.from(json['checklistFormData']),
+    );
+  }
 }
