@@ -1,3 +1,4 @@
+import 'package:drone_flight_checklist/view/checklist_form_view.dart'; // Ensure the path is correct
 import 'package:flutter/material.dart';
 
 void main() {
@@ -9,12 +10,12 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
+    return MaterialApp(
+      title: 'Drone Flight Checklist', // Optional: Add title for better structure
+      theme: ThemeData(
+        primarySwatch: Colors.blue, // Optional: Customize app theme
       ),
+      home: ChecklistFormView(), // Displays your ChecklistFormView widget
     );
   }
 }
