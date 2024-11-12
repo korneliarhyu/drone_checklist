@@ -45,12 +45,76 @@ class DatabaseHelper {
   }
 
   static Future<int> createChecklistForm(ChecklistFormModel model) async {
+  final db = await DatabaseHelper.db();
+
+  // Creating the data map for insertion
+  final data = {
+    'templateId': model.templateId,
+    'formName': model.formName,
+    'checklistFormData': model.checklistFormData
+  };
+
+  // Inserting into 'form' table, not 'data'
+  final id = await db.insert(
+    'form', // Correct table name
+    data,
+    conflictAlgorithm: sqlite.ConflictAlgorithm.replace
+  );
+
+  return id;
+}
+
+
+  static Future<List<Map<String, dynamic>>> getAllData() async{
+    final db = await DatabaseHelper.db();
+    return db.query(
+      "data", 
+      orderBy: "formID"
+    );
+  }
+
+  static Future<List<Map<String, dynamic>>> getSingleData(int id) async {
     final db = await DatabaseHelper.db();
 
-    return await db.insert(
-      'form',
-      model.toJson(),
-      conflictAlgorithm: sqlite.ConflictAlgorithm.replace,
+    return db.query(
+      "data",
+      where: "formID = ?",
+      whereArgs: [id],
+      limit: 1
     );
+  }
+
+  static Future<int> updateForm(int formID, int templateID, String formName, String formData) async {
+    final db = await DatabaseHelper.db();
+
+    final data = {
+      'formID' : formID,
+      'templateID' : templateID,
+      'formName' : formName,
+      'formData' : formData
+    };
+
+    final result = await db.update(
+      "data", 
+      data,
+      where: "id = ?",
+      whereArgs: [formID]
+    );
+
+    return result;
+  }
+
+  static Future<void> deleteData(int id) async {
+    final db = await DatabaseHelper.db();
+
+    try{
+      await db.delete(
+        "data", 
+        where: "formID = ?",
+        whereArgs:[id]
+      );
+    } catch (e) {
+      print("Delete Failed for $e");
+    }
   }
 }
