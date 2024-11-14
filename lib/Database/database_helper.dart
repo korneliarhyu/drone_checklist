@@ -8,24 +8,24 @@ class DatabaseHelper {
 
     //membuat table template
     await database.execute('''CREATE TABLE template(
-      templateID INTEGER PRIMARY KEY AUTOINCREMENT,
+      templateId INTEGER PRIMARY KEY AUTOINCREMENT,
       templateName TEXT,
       formType TEXT,
       updatedBy TEXT,
-      updatedDate TIMPESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       templateFormData TEXT
     )
     ''');
 
     //membuat table form
     await database.execute('''CREATE TABLE form (
-      formID INTEGER PRIMARY KEY AUTOINCREMENT,
-      templateID INTEGER,
+      formId INTEGER PRIMARY KEY AUTOINCREMENT,
+      templateId INTEGER,
       formName TEXT,
       updatedBy TEXT,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      formData TEXT,
-      FOREIGN KEY (templateID) REFERENCES template(templateID) ON DELETE CASCADE
+      checklistFormData TEXT,
+      FOREIGN KEY (templateId) REFERENCES template(templateId) ON DELETE CASCADE
       )
     ''');
   }
@@ -48,73 +48,109 @@ class DatabaseHelper {
   final db = await DatabaseHelper.db();
 
   // Creating the data map for insertion
-  final data = {
+  final form = {
     'templateId': model.templateId,
     'formName': model.formName,
     'checklistFormData': model.checklistFormData
   };
 
-  // Inserting into 'form' table, not 'data'
-  final id = await db.insert(
-    'form', // Correct table name
-    data,
+  final formId = await db.insert(
+    'form',
+    form,
     conflictAlgorithm: sqlite.ConflictAlgorithm.replace
   );
 
-  return id;
+  return formId;
 }
 
 
   static Future<List<Map<String, dynamic>>> getAllData() async{
     final db = await DatabaseHelper.db();
     return db.query(
-      "data", 
-      orderBy: "formID"
+      "form", 
+      orderBy: "formId"
     );
   }
 
-  static Future<List<Map<String, dynamic>>> getSingleData(int id) async {
+  static Future<List<Map<String, dynamic>>> getSingleData(int formId) async {
     final db = await DatabaseHelper.db();
 
     return db.query(
-      "data",
-      where: "formID = ?",
-      whereArgs: [id],
+      "form",
+      where: "formId = ?",
+      whereArgs: [formId],
       limit: 1
     );
   }
 
-  static Future<int> updateForm(int formID, int templateID, String formName, String formData) async {
+  static Future<int> updateForm(int formId, int templateId, String formName, String checklistFormData) async {
     final db = await DatabaseHelper.db();
 
-    final data = {
-      'formID' : formID,
-      'templateID' : templateID,
+    final form = {
+      // 'formId' : formId,
+      'templateId' : templateId,
       'formName' : formName,
-      'formData' : formData
+      'checklistFormData' : checklistFormData
     };
 
     final result = await db.update(
-      "data", 
-      data,
-      where: "id = ?",
-      whereArgs: [formID]
+      "form", 
+      form,
+      where: "formId = ?",
+      whereArgs: [formId]
     );
 
     return result;
   }
 
-  static Future<void> deleteData(int id) async {
+  static Future<void> deleteData(int formId) async {
     final db = await DatabaseHelper.db();
 
     try{
       await db.delete(
-        "data", 
-        where: "formID = ?",
-        whereArgs:[id]
+        "form", 
+        where: "formId = ?",
+        whereArgs:[formId]
       );
     } catch (e) {
       print("Delete Failed for $e");
     }
   }
+
+  static Future<int> createTemplate({
+  required String templateName,
+  required String formType,
+  required String updatedBy,
+  required String templateFormData,
+  }) async {
+  final db = await DatabaseHelper.db();
+
+  // Creating the data map for insertion
+  final template = {
+    'templateName': templateName,
+    'formType': formType,
+    'updatedBy': updatedBy,
+    'templateFormData': templateFormData,
+  };
+
+  // Inserting the data into the 'template' table
+  final templateId = await db.insert(
+    'template',
+    template,
+    conflictAlgorithm: sqlite.ConflictAlgorithm.replace,
+  );
+
+  return templateId;
+}
+
+  static Future<void> addTemplateExample() async {
+  final templateId = await DatabaseHelper.createTemplate(
+    templateName: 'Sample Template', 
+    formType: 'Checklist', 
+    updatedBy: 'Admin', 
+    templateFormData: 
+      '{"Name": "text", "Weather": "text", "Condition": "Text"}', // Hardcoded template form data as JSON
+  );
+}
+
 }

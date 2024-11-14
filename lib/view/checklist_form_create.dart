@@ -6,6 +6,8 @@ import 'package:drone_flight_checklist/model/checklist_form_model.dart'; // Impo
 
 
 class CreateForm extends StatefulWidget {
+  const CreateForm({super.key});
+
   @override
   _CreateFormState createState() => _CreateFormState();
 }
@@ -17,7 +19,6 @@ class _CreateFormState extends State<CreateForm> {
   final TextEditingController _updatedByController = TextEditingController();
   final TextEditingController _formDataController = TextEditingController();
 
-  // Example function to save form (you can customize it)
   void _saveForm() async {
   if (_formKey.currentState?.validate() ?? false) {
     final int? templateId = int.tryParse(_templateIDController.text);
@@ -43,10 +44,11 @@ class _CreateFormState extends State<CreateForm> {
     }
 
     final formModel = ChecklistFormModel(
+      formId: null,
       templateId: templateId,
       formName: formName,
       updatedBy: updatedBy,
-      updatedDate: DateTime.now(), // Assuming this is what you want
+      updatedDate: DateTime.now(), 
       checklistFormData: checklistFormData,
     );
 
@@ -65,10 +67,7 @@ class _CreateFormState extends State<CreateForm> {
         SnackBar(content: Text('Error saving form: $e'))
       );
     }
-  }
-}
-
-  
+  } 
 }
 
 
@@ -76,7 +75,7 @@ class _CreateFormState extends State<CreateForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Form'),
+        title: const Text('Fill Form'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -86,53 +85,26 @@ class _CreateFormState extends State<CreateForm> {
             children: [
               TextFormField(
                 controller: _formNameController,
-                decoration: InputDecoration(labelText: 'Form Name'),
-                // validator: (value) {
-                //   if (value == null || value.isEmpty) {
-                //     return 'Please enter a form name';
-                //   }
-                //   return null;
-                // },
+                decoration: const InputDecoration(labelText: 'Form Name'),
               ),
               TextFormField(
                 controller: _templateIDController,
-                decoration: InputDecoration(labelText: 'Template ID'),
+                decoration: const InputDecoration(labelText: 'Template ID'),
                 keyboardType: TextInputType.number,
-                // validator: (value) {
-                //   if (value == null || value.isEmpty) {
-                //     return 'Please enter a template ID';
-                //   }
-                //   if (int.tryParse(value) == null) {
-                //     return 'Please enter a valid number';
-                //   }
-                //   return null;
-                // },
               ),
               TextFormField(
                 controller: _updatedByController,
-                decoration: InputDecoration(labelText: 'Updated By'),
-                // validator: (value) {
-                //   if (value == null || value.isEmpty) {
-                //     return 'Please enter the name of the updater';
-                //   }
-                //   return null;
-                // },
+                decoration: const InputDecoration(labelText: 'Updated By'),
               ),
               TextFormField(
                 controller: _formDataController,
-                decoration: InputDecoration(labelText: 'Form Data'),
+                decoration: const InputDecoration(labelText: 'Form Data'),
                 maxLines: 5,
-                // validator: (value) {
-                //   if (value == null || value.isEmpty) {
-                //     return 'Please enter form data';
-                //   }
-                //   return null;
-                // },
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveForm,
-                child: Text('Save Form'),
+                child: const Text('Save Form'),
               ),
             ],
           ),

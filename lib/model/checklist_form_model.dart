@@ -1,5 +1,5 @@
 class ChecklistFormModel {
-  final int formId;
+  final int? formId;
   final int templateId;
   final String formName;
   final String updatedBy;

@@ -1,8 +1,11 @@
+import 'package:drone_flight_checklist/Database/database_helper.dart';
 import 'package:drone_flight_checklist/view/checklist_form_view.dart';
 import 'package:drone_flight_checklist/view/checklist_form_create.dart'; 
 import 'package:flutter/material.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseHelper.addTemplateExample();
   runApp(const MainApp());
 }
 
@@ -13,11 +16,11 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     
     return MaterialApp(
-      title: 'Drone Flight Checklist', // Optional: Add title for better structure
+      title: 'Drone Flight Checklist', 
       theme: ThemeData(
-        primarySwatch: Colors.blue, // Optional: Customize app theme
+        primarySwatch: Colors.blue, //Customize app theme
       ),
-      home: ChecklistFormView(), // Displays your ChecklistFormView widget
+      home: ChecklistFormView(), // Displays ChecklistFormView widget
     );
   }
 }

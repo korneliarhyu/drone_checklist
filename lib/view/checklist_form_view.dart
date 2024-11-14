@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'checklist_form_create.dart'; 
 
 class ChecklistFormView extends StatefulWidget {
+  const ChecklistFormView({super.key});
+
   @override
   _ChecklistFormViewState createState() => _ChecklistFormViewState();
 }
 
 class _ChecklistFormViewState extends State<ChecklistFormView> {
-  List<String> _formList = [];
+  final List<String> _formList = [];
 
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   void _addForm(String formName) {
     print('Adding form: $formName'); // Debugging
@@ -89,6 +91,8 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
     );
   }
 }
+
+
 
 void main() => runApp(MaterialApp(
   home: ChecklistFormView(),
