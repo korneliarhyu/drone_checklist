@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'checklist_form_create.dart'; 
+import 'package:drone_flight_checklist/model/template_question.dart'; 
 
 class ChecklistFormView extends StatefulWidget {
-  const ChecklistFormView({super.key});
+  final Questions templateQuestions; // Add templateQuestions as a field
+
+  const ChecklistFormView({super.key, required this.templateQuestions}); // Require the field
 
   @override
   _ChecklistFormViewState createState() => _ChecklistFormViewState();
@@ -23,7 +26,9 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
   void _navigateToCreateForm() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => CreateForm()),
+      MaterialPageRoute(
+        builder: (context) => CreateForm(templateQuestions: widget.templateQuestions),
+      ),
     );
     print('Result from CreateForm: $result'); // Debugging
     if (result != null && result is String) {
@@ -92,8 +97,21 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
   }
 }
 
+void main() {
+  // Create a sample templateQuestions instance
+  Questions sampleQuestions = Questions(
+    questions: {
+      "question1": Question(
+        question: "Sample Text Question",
+        type: "text",
+        option: [],
+        required: true,
+      ),
+      // Add more sample questions as needed
+    },
+  );
 
-
-void main() => runApp(MaterialApp(
-  home: ChecklistFormView(),
-));
+  runApp(MaterialApp(
+    home: ChecklistFormView(templateQuestions: sampleQuestions),
+  ));
+}

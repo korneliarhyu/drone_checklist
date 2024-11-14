@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
-import 'package:drone_flight_checklist/Database/database_helper.dart'; // Adjust the import path based on your project structure
-import 'package:drone_flight_checklist/model/checklist_form_model.dart'; // Import model if you need to create objects
-
+import 'package:drone_flight_checklist/model/template_question.dart'; 
 
 class CreateForm extends StatefulWidget {
-  const CreateForm({super.key});
+  final Questions templateQuestions;
+
+  const CreateForm({super.key, required this.templateQuestions});
 
   @override
   _CreateFormState createState() => _CreateFormState();
@@ -14,62 +14,133 @@ class CreateForm extends StatefulWidget {
 
 class _CreateFormState extends State<CreateForm> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _formNameController = TextEditingController();
-  final TextEditingController _templateIDController = TextEditingController();
-  final TextEditingController _updatedByController = TextEditingController();
-  final TextEditingController _formDataController = TextEditingController();
+  final Map<String, TextEditingController> _questionControllers = {};
 
-  void _saveForm() async {
-  if (_formKey.currentState?.validate() ?? false) {
-    final int? templateId = int.tryParse(_templateIDController.text);
-    if (templateId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid Template ID'))
-      );
-      return;
+  @override
+  void initState() {
+    super.initState();
+    // Initialize controllers for each question in the template
+    widget.templateQuestions.questions.forEach((key, question) {
+      _questionControllers[key] = TextEditingController();
+    });
+  }
+
+  @override
+  void dispose() {
+    // Dispose controllers to avoid memory leaks
+    _questionControllers.values.forEach((controller) => controller.dispose());
+    super.dispose();
+  }
+
+  void _saveForm() {
+    if (_formKey.currentState?.validate() ?? false) {
+      // Collect form data here
+      Map<String, dynamic> formData = {};
+      _questionControllers.forEach((key, controller) {
+        formData[key] = controller.text;
+      });
+
+      // Print or handle form data
+      print(jsonEncode(formData));
+      // Perform your form submission logic
     }
+  }
 
-    final String formName = _formNameController.text;
-    final String updatedBy = _updatedByController.text;
+  Widget _buildFormFields() {
+    List<Widget> fields = [];
 
-    // Assuming formData is a JSON string that needs to be converted to a Map
-    Map<String, dynamic> checklistFormData;
-    try {
-      checklistFormData = jsonDecode(_formDataController.text);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid form data format'))
-      );
-      return;
-    }
+    // Create form fields dynamically based on the questions
+    widget.templateQuestions.questions.forEach((key, question) {
+      switch (question.type) {
+        case 'text':
+          fields.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: TextFormField(
+                controller: _questionControllers[key],
+                decoration: InputDecoration(labelText: question.question),
+                validator: (value) {
+                  if (question.required && (value == null || value.isEmpty)) {
+                    return '${question.question} is required';
+                  }
+                  return null;
+                },
+              ),
+            ),
+          );
+          break;
+        case 'multiple':
+          fields.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(question.question),
+                  ...question.option.map((opt) {
+                    return CheckboxListTile(
+                      title: Text(opt),
+                      value: _questionControllers[key]?.text.contains(opt) ?? false,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            _questionControllers[key]?.text += ' $opt';
+                          } else {
+                            _questionControllers[key]?.text = _questionControllers[key]!
+                                .text.replaceAll(' $opt', '');
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ],
+              ),
+            ),
+          );
+          break;
+        case 'dropdown':
+        fields.add(
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(question.question),
+                DropdownButtonFormField<String>(
+                  value: _questionControllers[key]?.text.isEmpty ?? true
+                      ? null
+                      : _questionControllers[key]?.text,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _questionControllers[key]?.text = newValue ?? '';
+                    });
+                  },
+                  items: question.option.map((String option) {
+                    return DropdownMenuItem<String>(
+                      value: option,
+                      child: Text(option),
+                    );
+                  }).toList(),
+                  decoration: InputDecoration(
+                    labelText: "Select an option",
+                  ),
+                  validator: (value) {
+                    if (question.required && (value == null || value.isEmpty)) {
+                      return '${question.question} is required';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+        break;
+      }
+    });
 
-    final formModel = ChecklistFormModel(
-      formId: null,
-      templateId: templateId,
-      formName: formName,
-      updatedBy: updatedBy,
-      updatedDate: DateTime.now(), 
-      checklistFormData: checklistFormData,
-    );
-
-    try {
-      await DatabaseHelper.createChecklistForm(formModel);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Form Saved!'))
-      );
-      _formNameController.clear();
-      _templateIDController.clear();
-      _updatedByController.clear();
-      _formDataController.clear();
-      Navigator.pop(context, formName); // Return the form name
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving form: $e'))
-      );
-    }
-  } 
-}
-
+    return Column(children: fields);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,24 +154,7 @@ class _CreateFormState extends State<CreateForm> {
           key: _formKey,
           child: ListView(
             children: [
-              TextFormField(
-                controller: _formNameController,
-                decoration: const InputDecoration(labelText: 'Form Name'),
-              ),
-              TextFormField(
-                controller: _templateIDController,
-                decoration: const InputDecoration(labelText: 'Template ID'),
-                keyboardType: TextInputType.number,
-              ),
-              TextFormField(
-                controller: _updatedByController,
-                decoration: const InputDecoration(labelText: 'Updated By'),
-              ),
-              TextFormField(
-                controller: _formDataController,
-                decoration: const InputDecoration(labelText: 'Form Data'),
-                maxLines: 5,
-              ),
+              _buildFormFields(),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveForm,

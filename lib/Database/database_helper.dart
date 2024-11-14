@@ -143,14 +143,14 @@ class DatabaseHelper {
   return templateId;
 }
 
-  static Future<void> addTemplateExample() async {
-  final templateId = await DatabaseHelper.createTemplate(
-    templateName: 'Sample Template', 
-    formType: 'Checklist', 
-    updatedBy: 'Admin', 
-    templateFormData: 
-      '{"Name": "text", "Weather": "text", "Condition": "Text"}', // Hardcoded template form data as JSON
-  );
-}
+//   static Future<void> addTemplateExample() async {
+//   final templateId = await DatabaseHelper.createTemplate(
+//     templateName: 'Sample Template', 
+//     formType: 'Checklist', 
+//     updatedBy: 'Admin', 
+//     templateFormData: 
+//       '{"Name": "text", "Weather": "text", "Condition": "Text"}', 
+//   );
+// }
 
 }
