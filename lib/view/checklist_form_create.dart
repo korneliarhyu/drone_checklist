@@ -54,7 +54,7 @@ class _CreateFormState extends State<CreateForm> {
       //
 
       updatedDate: DateTime.now(), // Assuming this is what you want
-      checklistFormData: formData,
+      formData: formData,
     );
 
     try {
