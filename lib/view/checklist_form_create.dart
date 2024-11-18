@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-
-import 'package:drone_flight_checklist/model/template_question.dart'; 
+import 'package:drone_flight_checklist/model/template_question.dart';
+import 'package:drone_flight_checklist/model/checklist_form_model.dart';
+import 'package:drone_flight_checklist/Database/database_helper.dart';
 
 class CreateForm extends StatefulWidget {
   final Questions templateQuestions;
@@ -15,42 +16,70 @@ class CreateForm extends StatefulWidget {
 class _CreateFormState extends State<CreateForm> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, TextEditingController> _questionControllers = {};
+  final Map<String, String> _dropdownValues = {}; // Track dropdown values separately
 
   @override
   void initState() {
     super.initState();
-    // Initialize controllers for each question in the template
-    widget.templateQuestions.questions.forEach((key, question) {
-      _questionControllers[key] = TextEditingController();
-    });
+    // Initialize controllers for each question
+    for (var entry in widget.templateQuestions.questions.entries) {
+      _questionControllers[entry.key] = TextEditingController();
+    }
   }
 
   @override
   void dispose() {
-    // Dispose controllers to avoid memory leaks
     _questionControllers.values.forEach((controller) => controller.dispose());
     super.dispose();
   }
 
   void _saveForm() {
     if (_formKey.currentState?.validate() ?? false) {
-      // Collect form data here
       Map<String, dynamic> formData = {};
       _questionControllers.forEach((key, controller) {
         formData[key] = controller.text;
       });
 
-      // Print or handle form data
+      // Handle dropdown values
+      formData.addAll(_dropdownValues);
+
+
+    final formModel = ChecklistFormModel(
+      formId: null,
+
+      //ini masih hardcode, benerin nanti
+      templateId: 1,
+      formName: "testForm",
+      updatedBy: "feli1",
+      //
+
+      updatedDate: DateTime.now(), // Assuming this is what you want
+      checklistFormData: formData,
+    );
+
+    try {
+      DatabaseHelper.createChecklistForm(formModel);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Form Saved!'))
+      );
+      Navigator.pop(context, "TestForm"); // Return the form name
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving form: $e'))
+      );
+    }
+
       print(jsonEncode(formData));
-      // Perform your form submission logic
     }
   }
 
   Widget _buildFormFields() {
     List<Widget> fields = [];
 
-    // Create form fields dynamically based on the questions
-    widget.templateQuestions.questions.forEach((key, question) {
+    for (var entry in widget.templateQuestions.questions.entries) {
+      var question = entry.value;
+      var key = entry.key;
+
       switch (question.type) {
         case 'text':
           fields.add(
@@ -86,8 +115,8 @@ class _CreateFormState extends State<CreateForm> {
                           if (value == true) {
                             _questionControllers[key]?.text += ' $opt';
                           } else {
-                            _questionControllers[key]?.text = _questionControllers[key]!
-                                .text.replaceAll(' $opt', '');
+                            _questionControllers[key]?.text =
+                                _questionControllers[key]!.text.replaceAll(' $opt', '');
                           }
                         });
                       },
@@ -99,45 +128,43 @@ class _CreateFormState extends State<CreateForm> {
           );
           break;
         case 'dropdown':
-        fields.add(
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(question.question),
-                DropdownButtonFormField<String>(
-                  value: _questionControllers[key]?.text.isEmpty ?? true
-                      ? null
-                      : _questionControllers[key]?.text,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _questionControllers[key]?.text = newValue ?? '';
-                    });
-                  },
-                  items: question.option.map((String option) {
-                    return DropdownMenuItem<String>(
-                      value: option,
-                      child: Text(option),
-                    );
-                  }).toList(),
-                  decoration: InputDecoration(
-                    labelText: "Select an option",
+          fields.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(question.question),
+                  DropdownButtonFormField<String>(
+                    value: _dropdownValues[key],
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        _dropdownValues[key] = newValue ?? '';
+                      });
+                    },
+                    items: question.option.map((String option) {
+                      return DropdownMenuItem<String>(
+                        value: option,
+                        child: Text(option),
+                      );
+                    }).toList(),
+                    decoration: InputDecoration(
+                      labelText: "Select an option",
+                    ),
+                    validator: (value) {
+                      if (question.required && (value == null || value.isEmpty)) {
+                        return '${question.question} is required';
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (question.required && (value == null || value.isEmpty)) {
-                      return '${question.question} is required';
-                    }
-                    return null;
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
-        break;
+          );
+          break;
       }
-    });
+    }
 
     return Column(children: fields);
   }

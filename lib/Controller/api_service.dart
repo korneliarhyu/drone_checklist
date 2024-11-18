@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'package:drone_flight_checklist/model/template_question.dart';
 
 class ApiService {
-  final String apiUrl = "http://yourapi.com/receive_questions"; // replace with your endpoint if using a real API
+  final String apiUrl = "http://yourapi.com/receive_questions"; // Replace with your actual API endpoint
 
-  // Function to send data to the server (same as before)
+  // Function to send data to the server (implementation unchanged)
   Future<void> sendQuestions(Questions data) async {
-    // Implementation for sending data to a server (unchanged)
+    // Implementation to send data to a server goes here (not shown)
   }
 
   // Function to use mock data instead of a real API call for testing
@@ -16,44 +16,36 @@ class ApiService {
       "question1": {
         "question": "Multiple Example",
         "type": "multiple",
-        "option": [
-          "multiple1",
-          "multiple2",
-          "multiple3"
-        ],
+        "option": ["multiple1", "multiple2", "multiple3"],
         "required": true
       },
       "question2": {
         "question": "Checklist Example",
         "type": "checklist",
-        "option": [
-          "checklist1",
-          "checklist2",
-          "checklist3"
-        ],
+        "option": ["checklist1", "checklist2", "checklist3"],
         "required": false
       },
       "question3": {
         "question": "Dropdown Example",
         "type": "dropdown",
-        "option": [
-          "dropdown1",
-          "dropdown2",
-          "dropdown3"
-        ],
+        "option": ["dropdown1", "dropdown2", "dropdown3"],
         "required": true
       },
       "question4": {
-        "question": "test text",
+        "question": "Test Text",
         "type": "text",
         "option": [],
         "required": true
       }
     };
 
-    // Simulating JSON decoding as if it came from an API response
-    final jsonData = jsonEncode(mockResponse); // Convert to JSON string for consistency
-    final Map<String, dynamic> decodedData = jsonDecode(jsonData); // Decode it back to a map
-    return Questions.fromJson(decodedData); // Assuming Questions.fromJson exists
+    // Convert the mock response to a Map<String, Question>
+    Map<String, Question> questionsMap = {};
+    mockResponse.forEach((key, value) {
+      questionsMap[key] = Question.fromJson(value);
+      // print(questionsMap[key]?.question);
+    });
+
+    return Questions(questions: questionsMap); // Return a Questions instance with Map<String, Question>
   }
 }

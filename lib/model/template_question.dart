@@ -1,7 +1,5 @@
-import 'dart:convert';
-
 class Questions {
-  Map<String, Question> questions;
+  Map<String, Question> questions; // Storing as a Map
 
   Questions({required this.questions});
 
@@ -9,7 +7,7 @@ class Questions {
   factory Questions.fromJson(Map<String, dynamic> json) {
     Map<String, Question> questionsMap = {};
     json.forEach((key, value) {
-      questionsMap[key] = Question.fromJson(value);
+      questionsMap[key] = Question.fromJson(value); // Key-value mapping
     });
     return Questions(questions: questionsMap);
   }
@@ -37,7 +35,6 @@ class Question {
     required this.required,
   });
 
-  // Convert JSON to Question instance
   factory Question.fromJson(Map<String, dynamic> json) {
     return Question(
       question: json['question'],
@@ -47,7 +44,6 @@ class Question {
     );
   }
 
-  // Convert Question instance to JSON
   Map<String, dynamic> toJson() {
     return {
       'question': question,

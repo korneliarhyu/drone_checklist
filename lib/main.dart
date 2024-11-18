@@ -1,43 +1,40 @@
-import 'package:drone_flight_checklist/Database/database_helper.dart';
-import 'package:drone_flight_checklist/view/checklist_form_view.dart';
+import 'package:drone_flight_checklist/Controller/api_service.dart';
 import 'package:flutter/material.dart';
-import 'package:drone_flight_checklist/model/template_question.dart'; // Import your Questions model
+import 'package:drone_flight_checklist/view/checklist_form_view.dart';
+import 'package:drone_flight_checklist/model/template_question.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // await DatabaseHelper.addTemplateExample(); // Uncomment if needed
-  runApp(const MainApp());
-}
-
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // Sample Questions instance to pass
-    Questions sampleQuestions = Questions(
-      questions: {
-        "question1": Question(
-          question: "Sample Question Text",
-          type: "text",
-          option: [],
-          required: true,
-        ),
-        "question2": Question(
-          question: "Multiple Choice Example",
-          type: "multiple",
-          option: ["Option 1", "Option 2", "Option 3"],
-          required: false,
-        ),
+void main() {
+  // Create a sample templateQuestions instance
+  // Question question1 = Question(question: "question1", type: "dropdown", option: ["op1", "op2", "op3"], required: false);
+  // Map<String, Question> someMap = {"question1": question1};
+  Questions sampleQuestions = Questions.fromJson({
+      "question1": {
+        "question": "Question no.1",
+        "type": "multiple",
+        "option": ["multiple1", "multiple2", "multiple3"],
+        "required": true
       },
-    );
+      "question2": {
+        "question": "Question no.2",
+        "type": "checklist",
+        "option": ["checklist1", "checklist2", "checklist3"],
+        "required": false
+      },
+      "question3": {
+        "question": "Question no.3",
+        "type": "dropdown",
+        "option": ["dropdown1", "dropdown2", "dropdown3"],
+        "required": true
+      },
+      "question4": {
+        "question": "Question no.4",
+        "type": "text",
+        "option": [],
+        "required": true
+      }
+    });
 
-    return MaterialApp(
-      title: 'Drone Flight Checklist',
-      theme: ThemeData(
-        primarySwatch: Colors.blue, // Customize app theme
-      ),
-      home: ChecklistFormView(templateQuestions: sampleQuestions), // Pass the Questions object
-    );
-  }
+  runApp(MaterialApp(
+    home: ChecklistFormView(templateQuestions: sampleQuestions),
+  ));
 }
