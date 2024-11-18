@@ -24,7 +24,7 @@ class DatabaseHelper {
       formName TEXT,
       updatedBy TEXT,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      checklistFormData TEXT,
+      formData TEXT,
       FOREIGN KEY (templateId) REFERENCES template(templateId) ON DELETE CASCADE
       )
     ''');
@@ -53,7 +53,7 @@ class DatabaseHelper {
   final form = {
     'templateId': model.templateId,
     'formName': model.formName,
-    'checklistFormData': model.checklistFormData
+    'formData': model.formData
   };
 
   final formId = await db.insert(

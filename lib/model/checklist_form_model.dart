@@ -4,7 +4,7 @@ class ChecklistFormModel {
   final String formName;
   final String updatedBy;
   final DateTime updatedDate;
-  final Map<String, dynamic> checklistFormData;
+  final Map<String, dynamic> formData;
 
   ChecklistFormModel({
     required this.formId,
@@ -12,7 +12,7 @@ class ChecklistFormModel {
     required this.formName,
     required this.updatedBy,
     required this.updatedDate,
-    required this.checklistFormData,
+    required this.formData,
   });
 
   // Convert model to JSON/Map for database
@@ -23,7 +23,7 @@ class ChecklistFormModel {
       'formName': formName,
       'updatedBy': updatedBy,
       'updatedDate': updatedDate.toIso8601String(),
-      'checklistFormData': checklistFormData,
+      'formData': formData,
     };
   }
 
@@ -35,7 +35,7 @@ class ChecklistFormModel {
       formName: json['formName'],
       updatedBy: json['updatedBy'],
       updatedDate: DateTime.parse(json['updatedDate']),
-      checklistFormData: Map<String, dynamic>.from(json['checklistFormData']),
+      formData: Map<String, dynamic>.from(json['formData']),
     );
   }
 }
