@@ -44,8 +44,6 @@ class DatabaseHelper {
     );
   }
 
-//hallooo
-
   static Future<int> createChecklistForm(ChecklistFormModel model) async {
   final db = await DatabaseHelper.db();
 

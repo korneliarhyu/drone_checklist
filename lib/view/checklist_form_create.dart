@@ -43,7 +43,6 @@ class _CreateFormState extends State<CreateForm> {
       // Handle dropdown values
       formData.addAll(_dropdownValues);
 
-
     final formModel = ChecklistFormModel(
       formId: null,
 
