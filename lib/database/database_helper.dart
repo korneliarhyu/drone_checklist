@@ -8,7 +8,6 @@ class DatabaseHelper {
   static Future<void> createTables(sqlite.Database database) async {
     //aktifkan foreign key
     await database.execute("PRAGMA foreign_keys = ON");
-    // await database.execute("DROP TABLE IF EXISTS form");
 
     //membuat table template
     await database.execute('''CREATE TABLE template(
@@ -28,11 +27,12 @@ class DatabaseHelper {
       formName TEXT,
       updatedBy TEXT,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      formData TEXT,
-      FOREIGN KEY (templateId) REFERENCES template(templateId) ON DELETE CASCADE
+      formData TEXT
+      
       )
     ''');
-
+    // foreign key sementara dihilangkan karena belum ada templateId.
+    // FOREIGN KEY (templateId) REFERENCES template(templateId) ON DELETE CASCADE
      
   }
 
