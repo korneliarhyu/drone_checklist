@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drone_checklist/model/template_question.dart';
 import 'package:drone_checklist/model/checklist_form_model.dart';
 import 'package:drone_checklist/Database/database_helper.dart';
+import 'package:drone_checklist/view/checklist_form_view.dart';
 
 class CreateForm extends StatefulWidget {
   final Questions templateQuestions;
@@ -29,16 +30,21 @@ class _CreateFormState extends State<CreateForm> {
 
   @override
   void dispose() {
-    _questionControllers.values.forEach((controller) => controller.dispose());
+    for (var controller in _questionControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
   void _saveForm() async{
     if (_formKey.currentState?.validate() ?? false) {
       Map<String, dynamic> formData = {};
+
       _questionControllers.forEach((key, controller) {
         formData[key] = controller.text;
       });
+
+      formData.addAll(_multipleValues);
 
       formData.addAll(_dropdownValues);
 
@@ -111,6 +117,7 @@ class _CreateFormState extends State<CreateForm> {
                         setState(() {
                           if (value == true) {
                             _questionControllers[key]?.text += ' $opt';
+
                           } else {
                             _questionControllers[key]?.text =
                                 _questionControllers[key]!.text.replaceAll(' $opt', '');

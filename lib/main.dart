@@ -1,9 +1,20 @@
-import 'package:drone_checklist/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/view/checklist_form_view.dart';
 import 'package:drone_checklist/model/template_question.dart';
+import 'package:drone_checklist/database/database_helper.dart';
 
 void main() {
+  // final database = new DatabaseHelper();
+  // database.insertDummyTemplate();
+  //
+  // var question1;
+  // database.getRandomTemplate().then((question) {
+  //   question1 = Questions.toString(question);
+  //   print(question1); // Handle `question1` here
+  // });
+  // final question = database.getRandomTemplate();
+  //
+  //final question1 = Questions.toString(question as Map<String, dynamic>);
   Questions sampleQuestions = Questions.toString({
       "question1": {
         "question": "Question no.1",

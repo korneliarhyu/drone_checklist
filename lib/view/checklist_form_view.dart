@@ -1,10 +1,11 @@
 import 'package:drone_checklist/database/database_helper.dart';
-import 'package:drone_checklist/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/view/checklist_form_create.dart';
 import 'package:drone_checklist/model/template_question.dart';
+import 'package:drone_checklist/view/template_list_view.dart';
 
 class ChecklistFormView extends StatefulWidget {
+  //const ButtonSection({super.key});
   final Questions templateQuestions;
 
   const ChecklistFormView({super.key, required this.templateQuestions});
@@ -33,8 +34,9 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
   @override
   void initState() {
     // TODO: implement initState
-    super.initState();
     _callData();
+    super.initState();
+
   }
 
   void _navigateToCreateForm() async {
@@ -47,19 +49,44 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
             CreateForm(templateQuestions: widget.templateQuestions),
       ),
     );
-    if (result != null && result is String) {
-      _callData();
-    }
+    _callData();
+  }
+
+  void _navigateToTemplatesList() async{
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => TemplateListView(),
+        ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Checklist Form View')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToCreateForm,
-        child: const Icon(Icons.add),
+      floatingActionButton: Stack(
+        children: [
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+            onPressed: _navigateToCreateForm,
+            child: const Icon(Icons.add),
+            ),
+          ),
+          Positioned(
+            bottom: 16,
+            right: 80,
+            child: FloatingActionButton(
+            onPressed: _navigateToTemplatesList,
+            child: const Icon(Icons.list),
+            ),
+          ),
+        ]
       ),
+
+
       body: _formList.isEmpty
           ? const Center(
               child: Text(
