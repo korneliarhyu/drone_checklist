@@ -1,18 +1,18 @@
 class Questions {
-  Map<String, Question> questions; // Storing as a Map
+  Map<String, Question> questions;
 
   Questions({required this.questions});
 
-  // Convert JSON to Questions instance
-  factory Questions.fromJson(Map<String, dynamic> json) {
+  // Convert JSON
+  factory Questions.toString(Map<String, dynamic> json) {
     Map<String, Question> questionsMap = {};
     json.forEach((key, value) {
-      questionsMap[key] = Question.fromJson(value); // Key-value mapping
+      questionsMap[key] = Question.jsonToString(value);
     });
     return Questions(questions: questionsMap);
   }
 
-  // Convert Questions instance to JSON
+  // Convert Questions to JSON
   Map<String, dynamic> toJson() {
     Map<String, dynamic> jsonMap = {};
     questions.forEach((key, question) {
@@ -35,7 +35,7 @@ class Question {
     required this.required,
   });
 
-  factory Question.fromJson(Map<String, dynamic> json) {
+  factory Question.jsonToString(Map<String, dynamic> json) {
     return Question(
       question: json['question'],
       type: json['type'],

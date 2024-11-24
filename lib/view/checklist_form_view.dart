@@ -1,10 +1,12 @@
-import 'package:drone_flight_checklist/services/api_service.dart';
+import 'package:drone_checklist/database/database_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:drone_flight_checklist/view/checklist_form_create.dart';
-import 'package:drone_flight_checklist/model/template_question.dart';
+import 'package:drone_checklist/view/checklist_form_create.dart';
+import 'package:drone_checklist/model/template_question.dart';
+import 'package:drone_checklist/view/template_list_view.dart';
 
 class ChecklistFormView extends StatefulWidget {
-  final Questions templateQuestions; // Questions is assumed to be a Map<String, Question> type
+  //const ButtonSection({super.key});
+  final Questions templateQuestions;
 
   const ChecklistFormView({super.key, required this.templateQuestions});
 
@@ -13,12 +15,28 @@ class ChecklistFormView extends StatefulWidget {
 }
 
 class _ChecklistFormViewState extends State<ChecklistFormView> {
-  final List<String> _formList = [];
+  List<Map<String, dynamic>> _formList = [];
 
-  void _addForm(String formName) {
-    setState(() {
-      _formList.add(formName);
-    });
+  void _callData() async {
+    var listData = await DatabaseHelper.getAllData();
+
+    _formList = listData.map((element){
+      return{
+        'formId': element['formId'],
+        'formName': element['formName'],
+      };
+    }).toList();
+    print("Fetched data: $_formList");
+
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    _callData();
+    super.initState();
+
   }
 
   void _navigateToCreateForm() async {
@@ -27,22 +45,48 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateForm(templateQuestions: widget.templateQuestions),
+        builder: (context) =>
+            CreateForm(templateQuestions: widget.templateQuestions),
       ),
     );
-    if (result != null && result is String) {
-      _addForm(result);
-    }
+    _callData();
+  }
+
+  void _navigateToTemplatesList() async{
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => TemplateListView(),
+        ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Checklist Form View')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToCreateForm,
-        child: const Icon(Icons.add),
+      floatingActionButton: Stack(
+        children: [
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton(
+            onPressed: _navigateToCreateForm,
+            child: const Icon(Icons.add),
+            ),
+          ),
+          Positioned(
+            bottom: 16,
+            right: 80,
+            child: FloatingActionButton(
+            onPressed: _navigateToTemplatesList,
+            child: const Icon(Icons.list),
+            ),
+          ),
+        ]
       ),
+
+
       body: _formList.isEmpty
           ? const Center(
               child: Text(
@@ -58,7 +102,7 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
                   title: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 5),
                     child: Text(
-                      _formList[index],
+                      _formList[index]['formName'],
                       style: const TextStyle(fontSize: 20),
                     ),
                   ),
@@ -67,15 +111,18 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
                     children: [
                       IconButton(
                         onPressed: () {
-                          // Add edit logic here
+                          // edit()
                         },
                         icon: const Icon(
                           Icons.edit,
                           color: Colors.indigo,
                         ),
                       ),
+
                       IconButton(
-                        onPressed: () {
+                        onPressed: () async {
+                          int formId = _formList[index]['formId'];
+                          await DatabaseHelper.deleteForm(formId);
                           setState(() {
                             _formList.removeAt(index);
                           });

@@ -1,13 +1,21 @@
-import 'package:drone_flight_checklist/services/api_service.dart';
 import 'package:flutter/material.dart';
-import 'package:drone_flight_checklist/view/checklist_form_view.dart';
-import 'package:drone_flight_checklist/model/template_question.dart';
+import 'package:drone_checklist/view/checklist_form_view.dart';
+import 'package:drone_checklist/model/template_question.dart';
+import 'package:drone_checklist/database/database_helper.dart';
 
 void main() {
-  // Create a sample templateQuestions instance
-  // Question question1 = Question(question: "question1", type: "dropdown", option: ["op1", "op2", "op3"], required: false);
-  // Map<String, Question> someMap = {"question1": question1};
-  Questions sampleQuestions = Questions.fromJson({
+  // final database = new DatabaseHelper();
+  // database.insertDummyTemplate();
+  //
+  // var question1;
+  // database.getRandomTemplate().then((question) {
+  //   question1 = Questions.toString(question);
+  //   print(question1); // Handle `question1` here
+  // });
+  // final question = database.getRandomTemplate();
+  //
+  //final question1 = Questions.toString(question as Map<String, dynamic>);
+  Questions sampleQuestions = Questions.toString({
       "question1": {
         "question": "Question no.1",
         "type": "multiple",
@@ -18,7 +26,7 @@ void main() {
         "question": "Question no.2",
         "type": "checklist",
         "option": ["checklist1", "checklist2", "checklist3"],
-        "required": false
+        "required": true
       },
       "question3": {
         "question": "Question no.3",
