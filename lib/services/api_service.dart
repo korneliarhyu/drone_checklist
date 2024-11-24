@@ -1,15 +1,12 @@
 import 'dart:convert';
-import 'package:drone_flight_checklist/model/template_question.dart';
+import 'package:drone_checklist/model/template_question.dart';
+import 'package:http/http.dart';
 
 class ApiService {
   final String apiUrl = "http://yourapi.com/receive_questions";
 
   //API Services for getting all templates id from website to application.
   Future<void> getAllTemplate(templateId ) async {
-
-  }
-
-  Future<void> sendQuestions(Questions data) async {
 
   }
 
@@ -42,13 +39,14 @@ class ApiService {
       }
     };
 
-    // Convert the mock response to a Map<String, Question>
+
     Map<String, Question> questionsMap = {};
     mockResponse.forEach((key, value) {
-      questionsMap[key] = Question.fromJson(value);
+      questionsMap[key] = Question.jsonToString(value);
+      //test debug template
       // print(questionsMap[key]?.question);
     });
 
-    return Questions(questions: questionsMap); // Return a Questions instance with Map<String, Question>
+    return Questions(questions: questionsMap);
   }
 }

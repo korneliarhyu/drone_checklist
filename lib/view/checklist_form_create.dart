@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:drone_flight_checklist/model/template_question.dart';
-import 'package:drone_flight_checklist/model/checklist_form_model.dart';
-import 'package:drone_flight_checklist/Database/database_helper.dart';
+import 'package:drone_checklist/model/template_question.dart';
+import 'package:drone_checklist/model/checklist_form_model.dart';
+import 'package:drone_checklist/Database/database_helper.dart';
 
 class CreateForm extends StatefulWidget {
   final Questions templateQuestions;
@@ -16,12 +16,12 @@ class CreateForm extends StatefulWidget {
 class _CreateFormState extends State<CreateForm> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, TextEditingController> _questionControllers = {};
-  final Map<String, String> _dropdownValues = {}; // Track dropdown values separately
+  final Map<String, String> _dropdownValues = {};
+  final Map<String, String> _multipleValues = {};
 
   @override
   void initState() {
     super.initState();
-    // Initialize controllers for each question
     for (var entry in widget.templateQuestions.questions.entries) {
       _questionControllers[entry.key] = TextEditingController();
     }
@@ -33,14 +33,13 @@ class _CreateFormState extends State<CreateForm> {
     super.dispose();
   }
 
-  void _saveForm() {
+  void _saveForm() async{
     if (_formKey.currentState?.validate() ?? false) {
       Map<String, dynamic> formData = {};
       _questionControllers.forEach((key, controller) {
         formData[key] = controller.text;
       });
 
-      // Handle dropdown values
       formData.addAll(_dropdownValues);
 
     final formModel = ChecklistFormModel(
@@ -48,11 +47,9 @@ class _CreateFormState extends State<CreateForm> {
 
       //ini masih hardcode, benerin nanti
       templateId: 1,
-      formName: "testForm",
-      updatedBy: "feli1",
-      //
-
-      updatedDate: DateTime.now(), // Assuming this is what you want
+      formName: "meow",
+      updatedBy: "User",
+      updatedDate: DateTime.now(),
       formData: formData,
     );
 
@@ -61,7 +58,7 @@ class _CreateFormState extends State<CreateForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Form Saved!'))
       );
-      Navigator.pop(context, "TestForm"); // Return the form name
+      Navigator.pop(context, formModel);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving form: $e'))
@@ -97,7 +94,8 @@ class _CreateFormState extends State<CreateForm> {
             ),
           );
           break;
-        case 'multiple':
+
+        case 'checklist':
           fields.add(
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -120,12 +118,13 @@ class _CreateFormState extends State<CreateForm> {
                         });
                       },
                     );
-                  }).toList(),
+                  })//.toList(),
                 ],
               ),
             ),
           );
           break;
+
         case 'dropdown':
           fields.add(
             Padding(
@@ -147,7 +146,7 @@ class _CreateFormState extends State<CreateForm> {
                         child: Text(option),
                       );
                     }).toList(),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: "Select an option",
                     ),
                     validator: (value) {
@@ -162,6 +161,33 @@ class _CreateFormState extends State<CreateForm> {
             ),
           );
           break;
+        
+        case 'multiple':
+          fields.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(question.question),
+                  ...question.option.map((opt) {
+                    return RadioListTile<String>(
+                      title: Text(opt),
+                      value: opt,
+                      groupValue: _multipleValues[key], 
+                      onChanged: (String? value) {
+                        setState(() {
+                          _multipleValues[key] = value ?? '';
+                        });
+                      },
+                    );
+                  })//.toList(),
+                ],
+              ),
+            ),
+          );
+          break;
+
       }
     }
 
