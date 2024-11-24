@@ -1,7 +1,5 @@
 import 'package:drone_checklist/model/checklist_form_model.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'dart:convert';
 
 class DatabaseHelper {
@@ -49,10 +47,10 @@ class DatabaseHelper {
     });
   }
 
-  static Future<String> getDBPath() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return File('${directory.path}/drone_checklist.db').path;
-  }
+  // static Future<String> getDBPath() async {
+  //   final directory = await getApplicationDocumentsDirectory();
+  //   return File('${directory.path}/drone_checklist.db').path;
+  // }
 
   //jika database ada maka buka
   static Future<sqlite.Database> db() async {
@@ -78,14 +76,13 @@ class DatabaseHelper {
     };
 
     
-    final formId = await db.insert('form', form,
-        conflictAlgorithm: sqlite.ConflictAlgorithm.replace);
+    final formId = await db.insert('form', form);
 
     final listForm=await db.query("form");
 
-    listForm.forEach((element) {
+    for (var element in listForm) {
       print(element);
-    },);
+    }
     print(formId);
 
     return formId;
@@ -133,28 +130,48 @@ class DatabaseHelper {
     }
   }
 
-  // static Future<int> createTemplate({
-  //   required String templateName,
-  //   required String formType,
-  //   required String updatedBy,
-  //   required String templateFormData,
-  // }) async {
-  //   final db = await DatabaseHelper.db();
-  //
-  //   final template = {
-  //     'templateName': templateName,
-  //     'formType': formType,
-  //     'updatedBy': updatedBy,
-  //     'templateFormData': templateFormData,
-  //   };
-  //
-  //   // Inserting the data into the template table
-  //   final templateId = await db.insert(
-  //     'template',
-  //     template,
-  //     conflictAlgorithm: sqlite.ConflictAlgorithm.replace,
-  //   );
-  //
-  //   return templateId;
-  // }
+  String stringTemplate = """{
+      "question1": {
+  "question": "Question no.1",
+  "type": "multiple",
+  "option": ["multiple1", "multiple2", "multiple3"],
+  "required": true
+  },
+  "question2": {
+  "question": "Question no.2",
+  "type": "checklist",
+  "option": ["checklist1", "checklist2", "checklist3"],
+  "required": true
+  },
+  "question3": {
+  "question": "Question no.3",
+  "type": "dropdown",
+  "option": ["dropdown1", "dropdown2", "dropdown3"],
+  "required": true
+  },
+  "question4": {
+  "question": "Question no.4",
+  "type": "text",
+  "option": [],
+  "required": true
+  }
+}""";
+
+  //insert template data
+  void insertDummyTemplate() async{
+    final db = await DatabaseHelper.db();
+
+    await db.rawInsert('INSERT INTO template (templateId, templateName, formType, updatedBy, updatedDate, templateFormData) VALUES (?,?,?,?,?,?)',
+      ['1', 'test1', 'postFlight', 'feli', DateTime.now().toString(), stringTemplate],
+    );
+
+  }
+  
+  Future<Map<String, dynamic>> getRandomTemplate() async{
+    
+    final db = await DatabaseHelper.db();
+    List<Map<String, dynamic>> loRtn = await db.rawQuery('SELECT TOP 1 templateFormData FROM template');
+
+    return loRtn.first;
+  }
 }

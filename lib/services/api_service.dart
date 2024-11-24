@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:drone_checklist/model/template_question.dart';
-import 'package:http/http.dart';
 
 class ApiService {
   final String apiUrl = "http://yourapi.com/receive_questions";
