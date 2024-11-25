@@ -8,7 +8,9 @@ class ChecklistFormView extends StatefulWidget {
   //const ButtonSection({super.key});
   final Questions templateQuestions;
 
-  const ChecklistFormView({super.key, required this.templateQuestions});
+  const ChecklistFormView({
+    super.key, required this.templateQuestions
+  });
 
   @override
   _ChecklistFormViewState createState() => _ChecklistFormViewState();
@@ -18,7 +20,7 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
   List<Map<String, dynamic>> _formList = [];
 
   void _callData() async {
-    var listData = await DatabaseHelper.getAllData();
+    var listData = await DatabaseHelper.getAllChecklist();
 
     _formList = listData.map((element){
       return{
