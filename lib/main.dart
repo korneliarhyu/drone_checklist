@@ -5,6 +5,7 @@ import 'package:drone_checklist/database/database_helper.dart';
 
 void main() {
   // final database = new DatabaseHelper();
+
   // database.insertDummyTemplate();
   //
   // var question1;
@@ -15,6 +16,7 @@ void main() {
   // final question = database.getRandomTemplate();
   //
   //final question1 = Questions.toString(question as Map<String, dynamic>);
+
   Questions sampleQuestions = Questions.toString({
       "question1": {
         "question": "Question no.1",
