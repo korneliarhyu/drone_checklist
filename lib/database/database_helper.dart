@@ -1,8 +1,12 @@
 import 'package:drone_checklist/model/checklist_form_model.dart';
+import 'package:drone_checklist/model/template_list_model.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart';
 import 'dart:convert';
 
 class DatabaseHelper {
+
   static Future<void> createTables(sqlite.Database database) async {
     //aktifkan foreign key
     await database.execute("PRAGMA foreign_keys = ON");
@@ -34,20 +38,6 @@ class DatabaseHelper {
     // FOREIGN KEY (templateId) REFERENCES template(templateId) ON DELETE CASCADE
      
   }
-
-  // static Future<List<ChecklistFormModel>> getAllForms() async {
-  //   final db = await DatabaseHelper.db();
-  //   final maps = await db.query('form', orderBy: "formId");
-  //
-  //   return List.generate(maps.length, (i) {
-  //     final formMap = {
-  //       ...maps[i],
-  //       'formData': jsonDecode(maps[i]['formData'] as String),
-  //     };
-  //     return ChecklistFormModel.fromJson(formMap);
-  //   });
-  // }
-
 
   //jika database ada maka buka
   static Future<sqlite.Database> db() async {
@@ -86,10 +76,6 @@ class DatabaseHelper {
   }
 
   static Future<List<Map<String, dynamic>>> getAllChecklist() async{
-    //testing path db
-    // String path=await DatabaseHelper.getDBPath();
-    // print(path);
-
     final db = await DatabaseHelper.db();
     return db.query(
       "form",
@@ -98,10 +84,6 @@ class DatabaseHelper {
   }
 
   static Future<List<Map<String, dynamic>>> getAllTemplates() async{
-    //testing path db
-    // String path=await DatabaseHelper.getDBPath();
-    // print(path);
-
     final db = await DatabaseHelper.db();
     List<Map<String, dynamic>> templates = await db.query('template');
     return templates;
@@ -154,43 +136,19 @@ class DatabaseHelper {
 
 
 
-//   String stringTemplate = """{
-//       "question1": {
-//   "question": "Question no.1",
-//   "type": "multiple",
-//   "option": ["multiple1", "multiple2", "multiple3"],
-//   "required": true
-//   },
-//   "question2": {
-//   "question": "Question no.2",
-//   "type": "checklist",
-//   "option": ["checklist1", "checklist2", "checklist3"],
-//   "required": true
-//   },
-//   "question3": {
-//   "question": "Question no.3",
-//   "type": "dropdown",
-//   "option": ["dropdown1", "dropdown2", "dropdown3"],
-//   "required": true
-//   },
-//   "question4": {
-//   "question": "Question no.4",
-//   "type": "text",
-//   "option": [],
-//   "required": true
-//   }
-// }""";
+// static Future<List<ChecklistFormModel>> getAllForms() async {
+//   final db = await DatabaseHelper.db();
+//   final maps = await db.query('form', orderBy: "formId");
 //
-//   //insert template data
-//   void insertDummyTemplate() async{
-//     final db = await DatabaseHelper.db();
-//
-//     await db.rawInsert('INSERT INTO template (templateId, templateName, formType, updatedBy, updatedDate, templateFormData) VALUES (?,?,?,?,?,?)',
-//       ['1', 'test1', 'postFlight', 'feli', DateTime.now().toString(), stringTemplate],
-//     );
-//
-//   }
-//
+//   return List.generate(maps.length, (i) {
+//     final formMap = {
+//       ...maps[i],
+//       'formData': jsonDecode(maps[i]['formData'] as String),
+//     };
+//     return ChecklistFormModel.fromJson(formMap);
+//   });
+// }
+
 //   Future<Map<String, dynamic>> getRandomTemplate() async{
 //
 //     final db = await DatabaseHelper.db();
@@ -198,4 +156,91 @@ class DatabaseHelper {
 //
 //     return loRtn.first;
 //   }
+
+  static Future<int> insertTemplate() async {
+    final db = await DatabaseHelper.db();
+
+    // template dummy hanya dapat diinsert 1-1.
+    // template 1
+    var templateJson = jsonEncode({
+      "templateId": 1,
+      "title": "Drone Pre-Flight Checklist",
+      "questions": {
+        "question1": {
+          "question": "Is the drone's firmware updated?",
+          "type": "dropdown",
+          "options": ["Yes", "No", "Not Applicable"],
+          "required": true
+        },
+        "question2": {
+          "question": "Inspect propellers for damage",
+          "type": "multiple",
+          "options": [
+            "No damage",
+            "Minor damage",
+            "Major damage",
+            "Needs replacement"
+          ],
+          "required": true
+        },
+        "question3": {
+          "question": "Battery charge level",
+          "type": "text",
+          "options": [],
+          "required": true
+        }
+      }
+    });
+
+    final template = {
+      'templateId': 1,
+      'templateName': 'Drone Checklist',
+      'formType': 'Pre-Flight',
+      'updatedDate': '2024-11-24',
+      'templateFormData': templateJson,
+      'deletedAt': null
+    };
+
+    return await db.insert('template', template);
+  }
+
+  // template 2
+  // var templateJson = jsonEncode({
+  //   "templateId": 2,
+  //   "title": "Drone Post-Flight Report",
+  //   "questions": {
+  //     "question1": {
+  //       "question": "Flight duration",
+  //       "type": "text",
+  //       "options": [],
+  //       "required": true
+  //     },
+  //     "question2": {
+  //       "question": "Weather conditions during flight",
+  //       "type": "dropdown",
+  //       "options": [
+  //         "Clear",
+  //         "Cloudy",
+  //         "Rainy",
+  //         "Windy"
+  //       ],
+  //       "required": true
+  //     },
+  //     "question3": {
+  //       "question": "General observations",
+  //       "type": "text",
+  //       "options": [],
+  //       "required": false
+  //     }
+  //   }
+  // });
+  //
+  // final template = {
+  //   'templateId': 2,
+  //   'templateName': 'Drone Post-Flight Report',
+  //   'formType': 'Post-Flight',
+  //   'updatedDate': '2024-12-24',
+  //   'templateFormData': templateJson,
+  //   'deletedAt': null
+  // };
 }

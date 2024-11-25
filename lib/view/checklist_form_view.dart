@@ -63,6 +63,16 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
     );
   }
 
+  void _insertTemplate() async {
+    try {
+      // variable templateId akan menyimpan templateId dari dummy.
+      int templateId = await DatabaseHelper.insertTemplate();
+      print('Template successfully inserted with ID: $templateId');
+    } catch (e) {
+      print('Error inserting template: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,6 +93,14 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
             child: FloatingActionButton(
             onPressed: _navigateToTemplatesList,
             child: const Icon(Icons.list),
+            ),
+          ),
+          Positioned(
+            bottom: 16,
+            right: 145,
+            child: FloatingActionButton(
+              onPressed: _insertTemplate,
+              child: const Icon(Icons.access_time_sharp),
             ),
           ),
         ]
