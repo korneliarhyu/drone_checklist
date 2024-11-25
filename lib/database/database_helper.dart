@@ -12,9 +12,9 @@ class DatabaseHelper {
       templateId INTEGER PRIMARY KEY AUTOINCREMENT,
       templateName TEXT,
       formType TEXT,
-      updatedBy TEXT,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      templateFormData TEXT
+      templateFormData TEXT,
+      deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''');
 
@@ -25,7 +25,8 @@ class DatabaseHelper {
       formName TEXT,
       updatedBy TEXT,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      formData TEXT
+      formData TEXT,
+      deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       
       )
     ''');
@@ -34,23 +35,19 @@ class DatabaseHelper {
      
   }
 
-  static Future<List<ChecklistFormModel>> getAllForms() async {
-    final db = await DatabaseHelper.db();
-    final maps = await db.query('form', orderBy: "formId");
-
-    return List.generate(maps.length, (i) {
-      final formMap = {
-        ...maps[i],
-        'formData': jsonDecode(maps[i]['formData'] as String),
-      };
-      return ChecklistFormModel.fromJson(formMap);
-    });
-  }
-
-  // static Future<String> getDBPath() async {
-  //   final directory = await getApplicationDocumentsDirectory();
-  //   return File('${directory.path}/drone_checklist.db').path;
+  // static Future<List<ChecklistFormModel>> getAllForms() async {
+  //   final db = await DatabaseHelper.db();
+  //   final maps = await db.query('form', orderBy: "formId");
+  //
+  //   return List.generate(maps.length, (i) {
+  //     final formMap = {
+  //       ...maps[i],
+  //       'formData': jsonDecode(maps[i]['formData'] as String),
+  //     };
+  //     return ChecklistFormModel.fromJson(formMap);
+  //   });
   // }
+
 
   //jika database ada maka buka
   static Future<sqlite.Database> db() async {
@@ -88,7 +85,7 @@ class DatabaseHelper {
     return formId;
   }
 
-  static Future<List<Map<String, dynamic>>> getAllData() async{
+  static Future<List<Map<String, dynamic>>> getAllChecklist() async{
     //testing path db
     // String path=await DatabaseHelper.getDBPath();
     // print(path);
@@ -98,6 +95,31 @@ class DatabaseHelper {
       "form",
       orderBy: "formId"
     );
+  }
+
+  static Future<List<Map<String, dynamic>>> getAllTemplates() async{
+    //testing path db
+    // String path=await DatabaseHelper.getDBPath();
+    // print(path);
+
+    final db = await DatabaseHelper.db();
+    List<Map<String, dynamic>> templates = await db.query('template');
+    return templates;
+  }
+
+  static Future<Map<String, dynamic>?> getTemplateById(int id) async {
+    final db = await DatabaseHelper.db();
+    List<Map> results = await db.query(
+      'template',
+      where: 'templateId = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (results.isNotEmpty) {
+      return Map<String, dynamic>.from(results.first);
+    }
+    return null;
+
   }
 
   static Future<int> updateForm(
@@ -130,48 +152,50 @@ class DatabaseHelper {
     }
   }
 
-  String stringTemplate = """{
-      "question1": {
-  "question": "Question no.1",
-  "type": "multiple",
-  "option": ["multiple1", "multiple2", "multiple3"],
-  "required": true
-  },
-  "question2": {
-  "question": "Question no.2",
-  "type": "checklist",
-  "option": ["checklist1", "checklist2", "checklist3"],
-  "required": true
-  },
-  "question3": {
-  "question": "Question no.3",
-  "type": "dropdown",
-  "option": ["dropdown1", "dropdown2", "dropdown3"],
-  "required": true
-  },
-  "question4": {
-  "question": "Question no.4",
-  "type": "text",
-  "option": [],
-  "required": true
-  }
-}""";
 
-  //insert template data
-  void insertDummyTemplate() async{
-    final db = await DatabaseHelper.db();
 
-    await db.rawInsert('INSERT INTO template (templateId, templateName, formType, updatedBy, updatedDate, templateFormData) VALUES (?,?,?,?,?,?)',
-      ['1', 'test1', 'postFlight', 'feli', DateTime.now().toString(), stringTemplate],
-    );
-
-  }
-  
-  Future<Map<String, dynamic>> getRandomTemplate() async{
-    
-    final db = await DatabaseHelper.db();
-    List<Map<String, dynamic>> loRtn = await db.rawQuery('SELECT TOP 1 templateFormData FROM template');
-
-    return loRtn.first;
-  }
+//   String stringTemplate = """{
+//       "question1": {
+//   "question": "Question no.1",
+//   "type": "multiple",
+//   "option": ["multiple1", "multiple2", "multiple3"],
+//   "required": true
+//   },
+//   "question2": {
+//   "question": "Question no.2",
+//   "type": "checklist",
+//   "option": ["checklist1", "checklist2", "checklist3"],
+//   "required": true
+//   },
+//   "question3": {
+//   "question": "Question no.3",
+//   "type": "dropdown",
+//   "option": ["dropdown1", "dropdown2", "dropdown3"],
+//   "required": true
+//   },
+//   "question4": {
+//   "question": "Question no.4",
+//   "type": "text",
+//   "option": [],
+//   "required": true
+//   }
+// }""";
+//
+//   //insert template data
+//   void insertDummyTemplate() async{
+//     final db = await DatabaseHelper.db();
+//
+//     await db.rawInsert('INSERT INTO template (templateId, templateName, formType, updatedBy, updatedDate, templateFormData) VALUES (?,?,?,?,?,?)',
+//       ['1', 'test1', 'postFlight', 'feli', DateTime.now().toString(), stringTemplate],
+//     );
+//
+//   }
+//
+//   Future<Map<String, dynamic>> getRandomTemplate() async{
+//
+//     final db = await DatabaseHelper.db();
+//     List<Map<String, dynamic>> loRtn = await db.rawQuery('SELECT TOP 1 templateFormData FROM template');
+//
+//     return loRtn.first;
+//   }
 }

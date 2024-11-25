@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
   sqflite: ^2.4.0
   http: ^1.2.2
   path_provider: ^2.0.14
@@ -20,6 +21,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/drone_checklist.db
 
 
 

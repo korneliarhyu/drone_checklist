@@ -54,9 +54,10 @@ class _CreateFormState extends State<CreateForm> {
       //ini masih hardcode, benerin nanti
       templateId: 1,
       formName: "meow",
-      updatedBy: "User",
+      // updatedBy: "User",
       updatedDate: DateTime.now(),
       formData: formData,
+      deletedAt: null,
     );
 
     try {

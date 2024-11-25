@@ -4,7 +4,7 @@ class ApiService {
   final String apiUrl = "http://yourapi.com/receive_questions";
 
   //API Services for getting all templates id from website to application.
-  Future<void> getAllTemplate(templateId ) async {
+  Future<void> getAllTemplate() async {
 
   }
 
