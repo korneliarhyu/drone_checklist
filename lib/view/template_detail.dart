@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:drone_checklist/Database/database_helper.dart';
 import 'package:flutter/material.dart';
 
 class TemplateDetail extends StatefulWidget {
@@ -17,19 +18,19 @@ class _TemplateDetailState extends State<TemplateDetail> {
   @override
   void initState() {
     super.initState();
-    _loadTemplateData();
+    _loadTemplateData(2);
   }
 
-
-  void _loadTemplateData() {
-    //masih static, belum fetch dari database
-    String fetchedData = '''
-      {"templateId":1,"title":"Drone Pre-Flight Checklist","questions":{"question1":{"question":"Is the drone's firmware updated?","type":"dropdown","options":["Yes","No","Not Applicable"],"required":true},"question2":{"question":"Inspect propellers for damage","type":"multiple","options":["No damage","Minor damage","Major damage","Needs replacement"],"required":true},"question3":{"question":"Battery charge level","type":"text","options":[],"required":true}}}
-    ''';
-    setState(() {
-      //membaca data dari json ke UI menggunakan jsonDecode, kebalikan dari jsonEncode
-      _templateData = jsonDecode(fetchedData);
-    });
+  // membutuhkan parameter templateId untuk menampilkan isi template
+  Future<void> _loadTemplateData(int templateId) async {
+    var templateData = await DatabaseHelper.getTemplateById(templateId);
+    if (templateData != null) {
+      setState(() {
+        _templateData = jsonDecode(templateData['templateFormData']);
+      });
+    } else {
+      print("Template not found");
+    }
   }
 
   @override
@@ -116,6 +117,21 @@ class _TemplateDetailState extends State<TemplateDetail> {
 
 
 // old code
+
+// void _loadTemplateData() {
+//   //masih static, belum fetch dari database
+//   String fetchedData = '''
+//     {"templateId":1,"title":"Drone Pre-Flight Checklist",
+//     "questions":{
+//     "question1":{"question":"Is the drone's firmware updated?","type":"dropdown","options":["Yes","No","Not Applicable"],"required":true},"question2":{"question":"Inspect propellers for damage","type":"multiple","options":["No damage","Minor damage","Major damage","Needs replacement"],"required":true},"question3":{"question":"Battery charge level","type":"text","options":[],"required":true}}}
+//   ''';
+//   setState(() {
+//     //membaca data dari json ke UI menggunakan jsonDecode, kebalikan dari jsonEncode
+//     _templateData = jsonDecode(fetchedData);
+//   });
+// }
+
+
 
 // class _TemplateDetailState extends State<TemplateDetail> {
 //   Map<String, dynamic>? _templateData;
