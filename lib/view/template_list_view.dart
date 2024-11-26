@@ -22,20 +22,24 @@ class TemplateListView extends StatelessWidget {
             icon: const Icon(Icons.arrow_back),
           ),
         ),
+
         body: FutureBuilder<List<Map<String, dynamic>>>(
+          // fetch seluruh template (getAllTemplates)
           future: _fetchTemplates(),
           builder: (context, snapshot) {
+            // snapshot digunakan untuk mengecek kondisi secara async (data akan bekerja di background)
+
             if (snapshot.connectionState == ConnectionState.waiting) {
-              // loading data
+              // loading data = anggaplah template masih otw di kurir.
               return const Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              // case kalau error
+              // case kalau error = template hilang
               return Center(child: Text("Error: ${snapshot.error}"));
             } else if (snapshot.data != null && snapshot.data!.isEmpty) {
-              // data tidak null, tetapi isinya kosong
+              // data tidak null, tetapi isinya kosong = templatenya ada, tapi datanya kosong.
               return const Center(child: Text("No templates available."));
             } else {
-              // datanya ada
+              // tempaltenya ada dan sampai ke aplikasi. kemudian unboxing untuk lihat data di dalamnya.
               return ListView.builder(
                 itemCount: snapshot.data!.length,
                 itemBuilder: (context, index) {
