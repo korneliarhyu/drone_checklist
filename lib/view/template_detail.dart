@@ -18,10 +18,17 @@ class _TemplateDetailState extends State<TemplateDetail> {
   @override
   void initState() {
     super.initState();
-    _loadTemplateData(2);
+    // memanggil sesuai templateId yang diclick
+    _loadTemplateData(widget.templateId);
   }
 
-  // membutuhkan parameter templateId untuk menampilkan isi template
+  // old code
+  // void initState() {
+  //   super.initState();
+  //   _loadTemplateData(2);
+  // }
+
+  // Fungsi ini untuk memuat data template dari database berdasarkan ID.
   Future<void> _loadTemplateData(int templateId) async {
     var templateData = await DatabaseHelper.getTemplateById(templateId);
     if (templateData != null) {
@@ -47,7 +54,25 @@ class _TemplateDetailState extends State<TemplateDetail> {
             title: Text(_templateData['title']),
             subtitle: Text("Template ID: ${_templateData['templateId']}"),
           ),
+          //menggunakan spread Operator untuk memasukkan semua widget pertanyaan ke dalam ListView
           ..._buildQuestions(_templateData['questions']),
+        ],
+      ),
+      floatingActionButton: Stack(
+        children: [
+          Positioned(
+            bottom: 16,
+            right: 16,  // Atur posisi di kanan bawah
+            child: FloatingActionButton.extended(
+              onPressed: () {
+                // Tambahkan fungsi unduh data di sini
+                print('Download Data');
+              },
+              icon: Icon(Icons.download),
+              label: Text("Download Template"),
+              tooltip: 'Download Template',  // Tooltip untuk memberi informasi lebih kepada pengguna
+            ),
+          ),
         ],
       ),
     );
