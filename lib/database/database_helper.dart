@@ -1,5 +1,6 @@
 import 'package:drone_checklist/model/checklist_form_model.dart';
 import 'package:drone_checklist/model/template_list_model.dart';
+import 'package:drone_checklist/model/dummy_template_model.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
@@ -31,12 +32,20 @@ class DatabaseHelper {
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       formData TEXT,
       deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      
       )
+    ''');
+
+    await database.execute('''CREATE TABLE dummy_template(
+      templateId INTEGER PRIMARY KEY AUTOINCREMENT,
+      templateName TEXT,
+      formType TEXT,
+      updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      templateFormData TEXT,
+      deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
     ''');
     // foreign key sementara dihilangkan karena belum ada templateId.
     // FOREIGN KEY (templateId) REFERENCES template(templateId) ON DELETE CASCADE
-     
   }
 
   //jika database ada maka buka
@@ -64,14 +73,11 @@ class DatabaseHelper {
 
     
     final formId = await db.insert('form', form);
-
     final listForm=await db.query("form");
-
     for (var element in listForm) {
       print(element);
     }
     print(formId);
-
     return formId;
   }
 
@@ -87,6 +93,27 @@ class DatabaseHelper {
     final db = await DatabaseHelper.db();
     List<Map<String, dynamic>> templates = await db.query('template');
     return templates;
+  }
+
+  static Future<List<Map<String, dynamic>>> getAllDummyTemplates() async{
+    final db = await DatabaseHelper.db();
+    List<Map<String, dynamic>> templates = await db.query('dummy_template');
+    return templates;
+  }
+
+  static Future<Map<String, dynamic>?> getDummyTemplateById(int id) async {
+    final db = await DatabaseHelper.db();
+    List<Map> results = await db.query(
+      'dummy_template',
+      where: 'templateId = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (results.isNotEmpty) {
+      return Map<String, dynamic>.from(results.first);
+    }
+    return null;
+
   }
 
   static Future<Map<String, dynamic>?> getTemplateById(int id) async {
@@ -134,8 +161,6 @@ class DatabaseHelper {
     }
   }
 
-
-
 // static Future<List<ChecklistFormModel>> getAllForms() async {
 //   final db = await DatabaseHelper.db();
 //   final maps = await db.query('form', orderBy: "formId");
@@ -157,7 +182,12 @@ class DatabaseHelper {
 //     return loRtn.first;
 //   }
 
-  static Future<int> insertTemplate() async {
+  static Future<int> insertTemplate(Map<String, dynamic> templateData) async {
+    final db = await DatabaseHelper.db();
+    return await db.insert("template", templateData);
+  }
+
+  static Future<int> insertDummyTemplate() async {
     final db = await DatabaseHelper.db();
 
     // template dummy hanya dapat diinsert 1-1.
@@ -201,7 +231,7 @@ class DatabaseHelper {
       'deletedAt': null
     };
 
-    return await db.insert('template', template);
+    return await db.insert('dummy_template', template);
   }
 
   // template 2

@@ -6,7 +6,7 @@ class TemplateListView extends StatelessWidget {
   const TemplateListView({super.key});
 
   Future<List<Map<String, dynamic>>> _fetchTemplates() async {
-    return await DatabaseHelper.getAllTemplates();
+    return await DatabaseHelper.getAllDummyTemplates();
   }
 
   @override
@@ -43,19 +43,19 @@ class TemplateListView extends StatelessWidget {
               return ListView.builder(
                 itemCount: snapshot.data!.length,
                 itemBuilder: (context, index) {
-                  var template = snapshot.data![index];
+                  var dummy_template = snapshot.data![index];
                   return Card(
                     margin: const EdgeInsets.all(15),
                     child: ListTile(
                       title: Text(
-                        template['templateName'],
+                        dummy_template['templateName'],
                         style: const TextStyle(fontSize: 20),
                       ),
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => TemplateDetail(
-                              templateId: template['templateId']),
+                              dummyTemplateId: dummy_template['templateId']),
                         ),
                       ),
                     ),

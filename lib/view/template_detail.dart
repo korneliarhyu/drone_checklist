@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'package:drone_checklist/Database/database_helper.dart';
+import 'package:drone_checklist/database/database_helper.dart';
 import 'package:flutter/material.dart';
 
 class TemplateDetail extends StatefulWidget {
-  final int templateId;
+  final int dummyTemplateId;
 
-  const TemplateDetail({Key? key, required this.templateId}) : super(key: key);
+  const TemplateDetail({Key? key, required this.dummyTemplateId}) : super(key: key);
 
   @override
   _TemplateDetailState createState() => _TemplateDetailState();
@@ -19,7 +19,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
   void initState() {
     super.initState();
     // memanggil sesuai templateId yang diclick
-    _loadTemplateData(widget.templateId);
+    _loadTemplateData(widget.dummyTemplateId);
   }
 
   // old code
@@ -30,13 +30,35 @@ class _TemplateDetailState extends State<TemplateDetail> {
 
   // Fungsi ini untuk memuat data template dari database berdasarkan ID.
   Future<void> _loadTemplateData(int templateId) async {
-    var templateData = await DatabaseHelper.getTemplateById(templateId);
+    var templateData = await DatabaseHelper.getDummyTemplateById(templateId);
     if (templateData != null) {
       setState(() {
         _templateData = jsonDecode(templateData['templateFormData']);
       });
     } else {
       print("Template not found");
+    }
+  }
+
+  Future<bool> _downloadTemplate(int templateId) async {
+    try{
+      var dummyTemplate = await DatabaseHelper.getDummyTemplateById(templateId);
+      if (dummyTemplate == null) {
+        return false;
+      } else {
+        Map<String, dynamic> templateData = {
+          'templateName': dummyTemplate['templateName'],
+          'formType': dummyTemplate['formType'],
+          'updatedDate': DateTime.now().toString(),
+          'templateFormData': dummyTemplate['templateFormData'],
+          'deletedAt': null
+        };
+        DatabaseHelper.insertTemplate(templateData);
+        return true;
+      }
+    } catch (e) {
+      print('Error: $e');
+      return false;
     }
   }
 
@@ -66,11 +88,12 @@ class _TemplateDetailState extends State<TemplateDetail> {
             child: FloatingActionButton.extended(
               onPressed: () {
                 // Tambahkan fungsi unduh data di sini
+                _downloadTemplate(widget.dummyTemplateId);
                 print('Download Data');
               },
               icon: Icon(Icons.download),
               label: Text("Download Template"),
-              tooltip: 'Download Template',  // Tooltip untuk memberi informasi lebih kepada pengguna
+              tooltip: 'Download Template',
             ),
           ),
         ],
