@@ -6,9 +6,14 @@ import 'package:drone_checklist/Database/database_helper.dart';
 import 'package:drone_checklist/view/checklist_form_view.dart';
 
 class CreateForm extends StatefulWidget {
-  final Questions templateQuestions;
+  //final Questions templateQuestions;
+  final int templateId;
 
-  const CreateForm({super.key, required this.templateQuestions});
+  const CreateForm({
+    Key? key,
+    //required this.templateQuestions,
+    required this.templateId,
+  }):super(key: key);
 
   @override
   _CreateFormState createState() => _CreateFormState();
@@ -19,13 +24,23 @@ class _CreateFormState extends State<CreateForm> {
   final Map<String, TextEditingController> _questionControllers = {};
   final Map<String, String> _dropdownValues = {};
   final Map<String, String> _multipleValues = {};
+  Map<String, dynamic>? templateData;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    for (var entry in widget.templateQuestions.questions.entries) {
-      _questionControllers[entry.key] = TextEditingController();
-    }
+    // for (var entry in widget.templateQuestions.questions.entries) {
+    //   _questionControllers[entry.key] = TextEditingController();
+    // }
+    _getTemplate();
+  }
+
+  Future<void> _getTemplate() async{
+    templateData = await DatabaseHelper.getTemplateById(widget.templateId);
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -79,9 +94,10 @@ class _CreateFormState extends State<CreateForm> {
   Widget _buildFormFields() {
     List<Widget> fields = [];
 
-    for (var entry in widget.templateQuestions.questions.entries) {
-      var question = entry.value;
-      var key = entry.key;
+    for (var question in templateData!['questions']) {
+      var key = question['templateId'];
+      // var question = entry.value;
+      // var key = entry.key;
 
       switch (question.type) {
         case 'text':
@@ -208,7 +224,15 @@ class _CreateFormState extends State<CreateForm> {
       appBar: AppBar(
         title: const Text('Fill Form'),
       ),
-      body: Padding(
+      body: isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : templateData == null
+          ? const Center(
+            child: Text("Please Select a template!",
+            style: TextStyle(fontSize:18),
+            ),
+        )
+      : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
