@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/view/checklist_form_view.dart';
-import 'package:drone_checklist/model/template_question.dart';
-import 'package:drone_checklist/database/database_helper.dart';
 
 void main() {
   // final database = new DatabaseHelper();
@@ -45,8 +43,6 @@ void main() {
   //   });
 
   runApp(MaterialApp(
-    //before
-    //home: ChecklistFormView(templateQuestions: sampleQuestions),
     home: ChecklistFormView(),
   ));
 }

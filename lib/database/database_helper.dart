@@ -3,7 +3,6 @@ import 'package:drone_checklist/model/template_list_model.dart';
 import 'package:drone_checklist/model/dummy_template_model.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
 import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart';
 import 'dart:convert';
 
 class DatabaseHelper {
@@ -192,41 +191,92 @@ class DatabaseHelper {
 
     // template dummy hanya dapat diinsert 1-1.
     // template 1
+    // var templateJson = jsonEncode({
+    //   "templateId": 1,
+    //   "title": "Drone Pre-Flight Checklist",
+    //   "questions": {
+    //     "question1": {
+    //       "question": "Is the drone's firmware updated?",
+    //       "type": "dropdown",
+    //       "options": ["Yes", "No", "Not Applicable"],
+    //       "required": true
+    //     },
+    //     "question2": {
+    //       "question": "Inspect propellers for damage",
+    //       "type": "multiple",
+    //       "options": [
+    //         "No damage",
+    //         "Minor damage",
+    //         "Major damage",
+    //         "Needs replacement"
+    //       ],
+    //       "required": true
+    //     },
+    //     "question3": {
+    //       "question": "Battery charge level",
+    //       "type": "text",
+    //       "options": [],
+    //       "required": true
+    //     }
+    //   }
+    // });
+
+    // final template = {
+    //   'templateId': 1,
+    //   'templateName': 'Drone Checklist',
+    //   'formType': 'Pre-Flight',
+    //   'updatedDate': '2024-11-24',
+    //   'templateFormData': templateJson,
+    //   'deletedAt': null
+    // };
+
+    // template 2
     var templateJson = jsonEncode({
-      "templateId": 1,
-      "title": "Drone Pre-Flight Checklist",
+      "templateId": 2,
+      "title": "Drone Post-Flight Report",
       "questions": {
         "question1": {
-          "question": "Is the drone's firmware updated?",
-          "type": "dropdown",
-          "options": ["Yes", "No", "Not Applicable"],
+          "question": "Flight duration",
+          "type": "text",
+          "options": [],
           "required": true
         },
         "question2": {
-          "question": "Inspect propellers for damage",
-          "type": "multiple",
+          "question": "Weather conditions during flight",
+          "type": "dropdown",
           "options": [
-            "No damage",
-            "Minor damage",
-            "Major damage",
-            "Needs replacement"
+            "Clear",
+            "Cloudy",
+            "Rainy",
+            "Windy"
           ],
           "required": true
         },
         "question3": {
-          "question": "Battery charge level",
+          "question": "General observations",
           "type": "text",
           "options": [],
-          "required": true
+          "required": false
+        },
+        "question4": {
+          "question": "General check",
+          "type": "multiple",
+          "options": [
+            "Turn off Drone",
+            "Inspect Drone for any Damage",
+            "Fasten Gimbal Lock",
+            "Pack equipments"
+          ],
+          "required": false
         }
       }
     });
 
     final template = {
-      'templateId': 1,
-      'templateName': 'Drone Checklist',
-      'formType': 'Pre-Flight',
-      'updatedDate': '2024-11-24',
+      'templateId': null,
+      'templateName': 'Drone Post-Flight Report',
+      'formType': 'Post-Flight',
+      'updatedDate': '2024-12-24',
       'templateFormData': templateJson,
       'deletedAt': null
     };
@@ -234,43 +284,5 @@ class DatabaseHelper {
     return await db.insert('dummy_template', template);
   }
 
-  // template 2
-  // var templateJson = jsonEncode({
-  //   "templateId": 2,
-  //   "title": "Drone Post-Flight Report",
-  //   "questions": {
-  //     "question1": {
-  //       "question": "Flight duration",
-  //       "type": "text",
-  //       "options": [],
-  //       "required": true
-  //     },
-  //     "question2": {
-  //       "question": "Weather conditions during flight",
-  //       "type": "dropdown",
-  //       "options": [
-  //         "Clear",
-  //         "Cloudy",
-  //         "Rainy",
-  //         "Windy"
-  //       ],
-  //       "required": true
-  //     },
-  //     "question3": {
-  //       "question": "General observations",
-  //       "type": "text",
-  //       "options": [],
-  //       "required": false
-  //     }
-  //   }
-  // });
-  //
-  // final template = {
-  //   'templateId': 2,
-  //   'templateName': 'Drone Post-Flight Report',
-  //   'formType': 'Post-Flight',
-  //   'updatedDate': '2024-12-24',
-  //   'templateFormData': templateJson,
-  //   'deletedAt': null
-  // };
+
 }

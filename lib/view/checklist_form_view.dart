@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:drone_checklist/view/checklist_form_create.dart';
 import 'package:drone_checklist/model/template_question.dart';
 import 'package:drone_checklist/view/template_list_view.dart';
+import 'package:drone_checklist/view/select_template.dart';
 
 int currTemplate = 1;
 
@@ -53,10 +54,10 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            CreateForm(
-                //templateQuestions: widget.templateQuestions,
-                templateId: currTemplate),
+        builder: (context) => SelectForm(),
+            // CreateForm(
+            //     //templateQuestions: widget.templateQuestions,
+            //     templateId: currTemplate),
       ),
     );
     _callData();
