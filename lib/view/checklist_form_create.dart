@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:drone_checklist/model/template_question.dart';
 import 'package:drone_checklist/model/checklist_form_model.dart';
 import 'package:drone_checklist/Database/database_helper.dart';
-import 'package:drone_checklist/view/checklist_form_view.dart';
+import 'checklist_form_view.dart';
+
 
 class CreateForm extends StatefulWidget {
   //final Questions templateQuestions;
@@ -24,21 +24,26 @@ class _CreateFormState extends State<CreateForm> {
   final Map<String, TextEditingController> _questionControllers = {};
   final Map<String, String> _dropdownValues = {};
   final Map<String, String> _multipleValues = {};
+
   Map<String, dynamic>? templateData;
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // for (var entry in widget.templateQuestions.questions.entries) {
-    //   _questionControllers[entry.key] = TextEditingController();
-    // }
-    _getTemplate();
+    _getTemplate(widget.templateId);
   }
 
-  Future<void> _getTemplate() async{
-    templateData = await DatabaseHelper.getTemplateById(widget.templateId);
+  Future<void> _getTemplate(int templateId) async{
+    var fetchedTemp = await DatabaseHelper.getTemplateById(templateId);
     setState(() {
+      if(fetchedTemp != null && fetchedTemp['templateFormData'] != null){
+        templateData = jsonDecode(fetchedTemp['templateFormData']);
+      } else{
+        templateData = null;
+      }
+      print("Fetched Template: $fetchedTemp");
+
       isLoading = false;
     });
   }
@@ -60,14 +65,12 @@ class _CreateFormState extends State<CreateForm> {
       });
 
       formData.addAll(_multipleValues);
-
       formData.addAll(_dropdownValues);
 
     final formModel = ChecklistFormModel(
       formId: null,
-
-      //ini masih hardcode, benerin nanti
-      templateId: 1,
+      templateId: widget.templateId,
+      //formname masih hardcode
       formName: "meow",
       // updatedBy: "User",
       updatedDate: DateTime.now(),
@@ -80,36 +83,38 @@ class _CreateFormState extends State<CreateForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Form Saved!'))
       );
-      Navigator.pop(context, formModel);
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => ChecklistFormView()
+          ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving form: $e'))
       );
     }
-
-      print(jsonEncode(formData));
+      //debug data jsonnya dapet / ngga
+      //print(jsonEncode(formData));
     }
   }
 
-  Widget _buildFormFields() {
+  List<Widget> _buildFormFields(Map<String, dynamic> questions) {
     List<Widget> fields = [];
 
-    for (var question in templateData!['questions']) {
-      var key = question['templateId'];
-      // var question = entry.value;
-      // var key = entry.key;
-
-      switch (question.type) {
+    questions.forEach((key, value) {
+      var question = value as Map<String, dynamic>;
+      switch (question['type']) {
         case 'text':
           fields.add(
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: TextFormField(
                 controller: _questionControllers[key],
-                decoration: InputDecoration(labelText: question.question),
+                decoration: InputDecoration(labelText: question['question']),
                 validator: (value) {
-                  if (question.required && (value == null || value.isEmpty)) {
-                    return '${question.question} is required';
+                  if (question['required'] && (value == null || value.isEmpty)) {
+                    return '${question['question']} is required';
                   }
                   return null;
                 },
@@ -125,8 +130,8 @@ class _CreateFormState extends State<CreateForm> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(question.question),
-                  ...question.option.map((opt) {
+                  Text(question['question']),
+                  ...question['options'].map((opt) {
                     return CheckboxListTile(
                       title: Text(opt),
                       value: _questionControllers[key]?.text.contains(opt) ?? false,
@@ -156,26 +161,23 @@ class _CreateFormState extends State<CreateForm> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(question.question),
+                  Text(question['question']),
                   DropdownButtonFormField<String>(
+                    decoration: InputDecoration(labelText: "Select an option"),
                     value: _dropdownValues[key],
                     onChanged: (String? newValue) {
                       setState(() {
                         _dropdownValues[key] = newValue ?? '';
                       });
                     },
-                    items: question.option.map((String option) {
-                      return DropdownMenuItem<String>(
+                    items: (question['options'] as List<dynamic>).map((option) => DropdownMenuItem<String>(
                         value: option,
-                        child: Text(option),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(
-                      labelText: "Select an option",
-                    ),
+                        child: Text(option.toString()),
+                      ))
+                    .toList(),
                     validator: (value) {
-                      if (question.required && (value == null || value.isEmpty)) {
-                        return '${question.question} is required';
+                      if (question['required'] && (value == null || value.isEmpty)) {
+                        return '${question['question']} is required';
                       }
                       return null;
                     },
@@ -193,8 +195,8 @@ class _CreateFormState extends State<CreateForm> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(question.question),
-                  ...question.option.map((opt) {
+                  Text(question['question']),
+                  ...question['options'].map((opt) {
                     return RadioListTile<String>(
                       title: Text(opt),
                       value: opt,
@@ -213,9 +215,9 @@ class _CreateFormState extends State<CreateForm> {
           break;
 
       }
-    }
+    });
 
-    return Column(children: fields);
+    return fields;
   }
 
   @override
@@ -226,9 +228,9 @@ class _CreateFormState extends State<CreateForm> {
       ),
       body: isLoading
         ? const Center(child: CircularProgressIndicator())
-        : templateData == null
+        : templateData == null || templateData!['questions'] == null
           ? const Center(
-            child: Text("Please Select a template!",
+            child: Text("Template doesn't exist!",
             style: TextStyle(fontSize:18),
             ),
         )
@@ -238,7 +240,7 @@ class _CreateFormState extends State<CreateForm> {
           key: _formKey,
           child: ListView(
             children: [
-              _buildFormFields(),
+              ..._buildFormFields(templateData?['questions']),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveForm,
