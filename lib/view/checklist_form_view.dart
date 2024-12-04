@@ -102,22 +102,25 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
             bottom: 16,
             right: 16,
             child: FloatingActionButton(
-            onPressed: _navigateToCreateForm,
-            child: const Icon(Icons.add),
+              heroTag: "createForm",
+              onPressed: _navigateToCreateForm,
+              child: const Icon(Icons.add),
             ),
           ),
           Positioned(
             bottom: 16,
             right: 80,
             child: FloatingActionButton(
-            onPressed: _navigateToTemplatesList,
-            child: const Icon(Icons.list),
+              heroTag: "templateList",
+              onPressed: _navigateToTemplatesList,
+              child: const Icon(Icons.list),
             ),
           ),
           Positioned(
             bottom: 16,
             right: 145,
             child: FloatingActionButton(
+              heroTag: "insertTemp",
               onPressed: _insertDummyTemplate,
               child: const Icon(Icons.access_time_sharp),
             ),
@@ -126,6 +129,7 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
             bottom: 16,
             right: 209,
             child: FloatingActionButton(
+              heroTag: "sync",
               onPressed: _sync,
               child: const Icon(Icons.cloud_upload),
             ),
