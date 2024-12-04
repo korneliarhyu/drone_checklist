@@ -25,6 +25,8 @@ class _CreateFormState extends State<CreateForm> {
   final Map<String, String> _dropdownValues = {};
   final Map<String, String> _multipleValues = {};
 
+  final Map<String, String> _textboxValues = {};
+
   Map<String, dynamic>? templateData;
   bool isLoading = true;
 
@@ -48,22 +50,23 @@ class _CreateFormState extends State<CreateForm> {
     });
   }
 
-  @override
-  void dispose() {
-    for (var controller in _questionControllers.values) {
-      controller.dispose();
-    }
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   for (var controller in _questionControllers.values) {
+  //     controller.dispose();
+  //   }
+  //   super.dispose();
+  // }
 
   void _saveForm() async{
     if (_formKey.currentState?.validate() ?? false) {
       Map<String, dynamic> formData = {};
 
       _questionControllers.forEach((key, controller) {
-        formData[key] = controller.text;
+        formData[key] = _questionControllers.values;
       });
 
+      formData.addAll(_textboxValues);
       formData.addAll(_multipleValues);
       formData.addAll(_dropdownValues);
 
@@ -117,6 +120,12 @@ class _CreateFormState extends State<CreateForm> {
                     return '${question['question']} is required';
                   }
                   return null;
+                },
+                onChanged: (value) {
+                  setState(() {
+                    _textboxValues[key] = value;
+                    _questionControllers[key]?.text = value;
+                  });
                 },
               ),
             ),

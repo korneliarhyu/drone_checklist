@@ -232,7 +232,7 @@ class DatabaseHelper {
 
     // template 2
     var templateJson = jsonEncode({
-      "templateId": 2,
+      "templateId": 3,
       "title": "Drone Post-Flight Report",
       "questions": {
         "question1": {
@@ -260,7 +260,7 @@ class DatabaseHelper {
         },
         "question4": {
           "question": "General check",
-          "type": "multiple",
+          "type": "checklist",
           "options": [
             "Turn off Drone",
             "Inspect Drone for any Damage",
