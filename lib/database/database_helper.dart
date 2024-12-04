@@ -27,10 +27,9 @@ class DatabaseHelper {
       formId INTEGER PRIMARY KEY AUTOINCREMENT,
       templateId INTEGER,
       formName TEXT,
-      updatedBy TEXT,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       formData TEXT,
-      deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP      
       )
     ''');
 
@@ -67,12 +66,13 @@ class DatabaseHelper {
     final form = {
       'templateId': model.templateId,
       'formName': model.formName,
-      'formData': jsonEncode(model.formData)
+      'formData': jsonEncode(model.formData),
+      'deletedAt': null
     };
 
     
     final formId = await db.insert('form', form);
-    final listForm=await db.query("form");
+    final listForm = await db.query("form");
     for (var element in listForm) {
       print(element);
     }
@@ -100,6 +100,20 @@ class DatabaseHelper {
     return templates;
   }
 
+  static Future<Map <String, dynamic>?> getFormById(int id) async {
+    final db = await DatabaseHelper.db();
+    List<Map> results = await db.query(
+      'form',
+      where: 'formId = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (results.isNotEmpty) {
+      return Map<String, dynamic>.from(results.first);
+    }
+    return null;
+  }
+
   static Future<Map<String, dynamic>?> getDummyTemplateById(int id) async {
     final db = await DatabaseHelper.db();
     List<Map> results = await db.query(
@@ -112,7 +126,6 @@ class DatabaseHelper {
       return Map<String, dynamic>.from(results.first);
     }
     return null;
-
   }
 
   static Future<Map<String, dynamic>?> getTemplateById(int id) async {
@@ -126,8 +139,7 @@ class DatabaseHelper {
     if (results.isNotEmpty) {
       return Map<String, dynamic>.from(results.first);
     }
-    return null;
-
+     return null;
   }
 
   static Future<int> updateForm(
@@ -172,7 +184,6 @@ class DatabaseHelper {
 //     return ChecklistFormModel.fromJson(formMap);
 //   });
 // }
-
 //   Future<Map<String, dynamic>> getRandomTemplate() async{
 //
 //     final db = await DatabaseHelper.db();
@@ -192,7 +203,6 @@ class DatabaseHelper {
     // template dummy hanya dapat diinsert 1-1.
     // template 1
     // var templateJson = jsonEncode({
-    //   "templateId": 1,
     //   "title": "Drone Pre-Flight Checklist",
     //   "questions": {
     //     "question1": {
@@ -220,9 +230,8 @@ class DatabaseHelper {
     //     }
     //   }
     // });
-
+    //
     // final template = {
-    //   'templateId': 1,
     //   'templateName': 'Drone Checklist',
     //   'formType': 'Pre-Flight',
     //   'updatedDate': '2024-11-24',
@@ -232,7 +241,6 @@ class DatabaseHelper {
 
     // template 2
     var templateJson = jsonEncode({
-      "templateId": 3,
       "title": "Drone Post-Flight Report",
       "questions": {
         "question1": {
@@ -260,7 +268,7 @@ class DatabaseHelper {
         },
         "question4": {
           "question": "General check",
-          "type": "checklist",
+          "type": "multiple",
           "options": [
             "Turn off Drone",
             "Inspect Drone for any Damage",
@@ -273,7 +281,6 @@ class DatabaseHelper {
     });
 
     final template = {
-      'templateId': null,
       'templateName': 'Drone Post-Flight Report',
       'formType': 'Post-Flight',
       'updatedDate': '2024-12-24',

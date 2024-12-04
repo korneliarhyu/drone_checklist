@@ -8,11 +8,14 @@ import 'checklist_form_view.dart';
 class CreateForm extends StatefulWidget {
   //final Questions templateQuestions;
   final int templateId;
+  final String templateName;
 
   const CreateForm({
     Key? key,
     //required this.templateQuestions,
     required this.templateId,
+    required this.templateName,
+
   }):super(key: key);
 
   @override
@@ -73,12 +76,9 @@ class _CreateFormState extends State<CreateForm> {
     final formModel = ChecklistFormModel(
       formId: null,
       templateId: widget.templateId,
-      //formname masih hardcode
-      formName: "meow",
-      // updatedBy: "User",
+      formName: widget.templateName,
       updatedDate: DateTime.now(),
       formData: formData,
-      deletedAt: null,
     );
 
     try {
@@ -233,7 +233,7 @@ class _CreateFormState extends State<CreateForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fill Form'),
+        title: const Text('Create Form'),
       ),
       body: isLoading
         ? const Center(child: CircularProgressIndicator())
@@ -249,6 +249,9 @@ class _CreateFormState extends State<CreateForm> {
           key: _formKey,
           child: ListView(
             children: [
+              ListTile(
+                title: Text(templateData?['title']),
+              ),
               ..._buildFormFields(templateData?['questions']),
               const SizedBox(height: 20),
               ElevatedButton(

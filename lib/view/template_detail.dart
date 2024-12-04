@@ -74,7 +74,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
         children: [
           ListTile(
             title: Text(_templateData['title']),
-            subtitle: Text("Template ID: ${_templateData['templateId']}"),
+            // subtitle: Text("Template ID: ${_templateData['templateId']}"),
           ),
           //menggunakan spread Operator untuk memasukkan semua widget pertanyaan ke dalam ListView
           ..._buildQuestions(_templateData['questions']),
@@ -162,80 +162,3 @@ class _TemplateDetailState extends State<TemplateDetail> {
     );
   }
 }
-
-
-// old code
-
-// void _loadTemplateData() {
-//   //masih static, belum fetch dari database
-//   String fetchedData = '''
-//     {"templateId":1,"title":"Drone Pre-Flight Checklist",
-//     "questions":{
-//     "question1":{"question":"Is the drone's firmware updated?","type":"dropdown","options":["Yes","No","Not Applicable"],"required":true},"question2":{"question":"Inspect propellers for damage","type":"multiple","options":["No damage","Minor damage","Major damage","Needs replacement"],"required":true},"question3":{"question":"Battery charge level","type":"text","options":[],"required":true}}}
-//   ''';
-//   setState(() {
-//     //membaca data dari json ke UI menggunakan jsonDecode, kebalikan dari jsonEncode
-//     _templateData = jsonDecode(fetchedData);
-//   });
-// }
-
-
-
-// class _TemplateDetailState extends State<TemplateDetail> {
-//   Map<String, dynamic>? _templateData;
-//
-//   void _loadTemplateData() async {
-//     var templateData = await DatabaseHelper.getTemplateById(widget.templateId);
-//     setState(() {
-//       _templateData = templateData;
-//     });
-//   }
-//
-//   void _downloadTemplates() async {}
-//
-//   @override
-//   void initState() {
-//     // TODO: implement initState
-//     super.initState();
-//     _loadTemplateData();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: Text("Template Detail")),
-//       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-//       floatingActionButton: Padding(
-//         padding: const EdgeInsets.only(
-//             bottom: 16.0), // Adjust bottom padding as needed
-//         child: FloatingActionButton.extended(
-//           onPressed: _downloadTemplates,
-//           icon: const Icon(Icons.download_rounded),
-//           label: const Text("Download Template"),
-//         ),
-//       ),
-//       body: _templateData == null
-//           ? const Center(
-//               child: Text(
-//                 "No Template Available Yet :(",
-//                 style: TextStyle(fontSize: 18),
-//               ),
-//             )
-//           : ListView(
-//               children: [
-//                 ListTile(
-//                   title: Text(_templateData!['templateName'],
-//                       style: TextStyle(fontSize: 18)),
-//                   subtitle:
-//                       Text("Template ID: ${_templateData!['templateId']}"),
-//                 ),
-//                 Divider(),
-//                 ListTile(
-//                   title: Text("Form Data:"),
-//                   subtitle: Text(_templateData!['templateFormData']),
-//                 )
-//               ],
-//             ),
-//     );
-//   }
-// }
