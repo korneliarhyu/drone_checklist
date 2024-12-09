@@ -166,15 +166,6 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        onPressed: () {
-                          // edit()
-                        },
-                        icon: const Icon(
-                          Icons.edit,
-                          color: Colors.indigo,
-                        ),
-                      ),
-                      IconButton(
                         onPressed: () async {
                           int formId = _formList[index]['formId'];
                           await DatabaseHelper.deleteForm(formId);
