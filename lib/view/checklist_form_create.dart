@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:drone_flight_checklist/model/template_question.dart';
-import 'package:drone_flight_checklist/model/checklist_form_model.dart';
-import 'package:drone_flight_checklist/Database/database_helper.dart';
+import 'package:drone_checklist/model/checklist_form_model.dart';
+import 'package:drone_checklist/Database/database_helper.dart';
+import 'checklist_form_view.dart';
+
 
 class CreateForm extends StatefulWidget {
-  final Questions templateQuestions;
+  //final Questions templateQuestions;
+  final int templateId;
+  final String templateName;
 
-  const CreateForm({super.key, required this.templateQuestions});
+  const CreateForm({
+    Key? key,
+    //required this.templateQuestions,
+    required this.templateId,
+    required this.templateName,
+
+  }):super(key: key);
 
   @override
   _CreateFormState createState() => _CreateFormState();
@@ -16,43 +25,59 @@ class CreateForm extends StatefulWidget {
 class _CreateFormState extends State<CreateForm> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, TextEditingController> _questionControllers = {};
-  final Map<String, String> _dropdownValues = {}; // Track dropdown values separately
+  final Map<String, String> _dropdownValues = {};
+  final Map<String, String> _multipleValues = {};
+
+  final Map<String, String> _textboxValues = {};
+
+  Map<String, dynamic>? templateData;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // Initialize controllers for each question
-    for (var entry in widget.templateQuestions.questions.entries) {
-      _questionControllers[entry.key] = TextEditingController();
-    }
+    _getTemplate(widget.templateId);
   }
 
-  @override
-  void dispose() {
-    _questionControllers.values.forEach((controller) => controller.dispose());
-    super.dispose();
+  Future<void> _getTemplate(int templateId) async{
+    var fetchedTemp = await DatabaseHelper.getTemplateById(templateId);
+    setState(() {
+      if(fetchedTemp != null && fetchedTemp['templateFormData'] != null){
+        templateData = jsonDecode(fetchedTemp['templateFormData']);
+      } else{
+        templateData = null;
+      }
+      print("Fetched Template: $fetchedTemp");
+
+      isLoading = false;
+    });
   }
 
-  void _saveForm() {
+  // @override
+  // void dispose() {
+  //   for (var controller in _questionControllers.values) {
+  //     controller.dispose();
+  //   }
+  //   super.dispose();
+  // }
+
+  void _saveForm() async{
     if (_formKey.currentState?.validate() ?? false) {
       Map<String, dynamic> formData = {};
+
       _questionControllers.forEach((key, controller) {
-        formData[key] = controller.text;
+        formData[key] = _questionControllers.values;
       });
 
-      // Handle dropdown values
+      formData.addAll(_textboxValues);
+      formData.addAll(_multipleValues);
       formData.addAll(_dropdownValues);
 
     final formModel = ChecklistFormModel(
       formId: null,
-
-      //ini masih hardcode, benerin nanti
-      templateId: 1,
-      formName: "testForm",
-      updatedBy: "feli1",
-      //
-
-      updatedDate: DateTime.now(), // Assuming this is what you want
+      templateId: widget.templateId,
+      formName: widget.templateName,
+      updatedDate: DateTime.now(),
       formData: formData,
     );
 
@@ -61,51 +86,61 @@ class _CreateFormState extends State<CreateForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Form Saved!'))
       );
-      Navigator.pop(context, "TestForm"); // Return the form name
+      Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => ChecklistFormView()
+          ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error saving form: $e'))
       );
     }
-
-      print(jsonEncode(formData));
+      //debug data jsonnya dapet / ngga
+      //print(jsonEncode(formData));
     }
   }
 
-  Widget _buildFormFields() {
+  List<Widget> _buildFormFields(Map<String, dynamic> questions) {
     List<Widget> fields = [];
 
-    for (var entry in widget.templateQuestions.questions.entries) {
-      var question = entry.value;
-      var key = entry.key;
-
-      switch (question.type) {
+    questions.forEach((key, value) {
+      var question = value as Map<String, dynamic>;
+      switch (question['type']) {
         case 'text':
           fields.add(
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: TextFormField(
                 controller: _questionControllers[key],
-                decoration: InputDecoration(labelText: question.question),
+                decoration: InputDecoration(labelText: question['question']),
                 validator: (value) {
-                  if (question.required && (value == null || value.isEmpty)) {
-                    return '${question.question} is required';
+                  if (question['required'] && (value == null || value.isEmpty)) {
+                    return '${question['question']} is required';
                   }
                   return null;
+                },
+                onChanged: (value) {
+                  setState(() {
+                    _textboxValues[key] = value;
+                    _questionControllers[key]?.text = value;
+                  });
                 },
               ),
             ),
           );
           break;
-        case 'multiple':
+
+        case 'checklist':
           fields.add(
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(question.question),
-                  ...question.option.map((opt) {
+                  Text(question['question']),
+                  ...question['options'].map((opt) {
                     return CheckboxListTile(
                       title: Text(opt),
                       value: _questionControllers[key]?.text.contains(opt) ?? false,
@@ -113,6 +148,7 @@ class _CreateFormState extends State<CreateForm> {
                         setState(() {
                           if (value == true) {
                             _questionControllers[key]?.text += ' $opt';
+
                           } else {
                             _questionControllers[key]?.text =
                                 _questionControllers[key]!.text.replaceAll(' $opt', '');
@@ -120,12 +156,13 @@ class _CreateFormState extends State<CreateForm> {
                         });
                       },
                     );
-                  }).toList(),
+                  })//.toList(),
                 ],
               ),
             ),
           );
           break;
+
         case 'dropdown':
           fields.add(
             Padding(
@@ -133,26 +170,23 @@ class _CreateFormState extends State<CreateForm> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(question.question),
+                  Text(question['question']),
                   DropdownButtonFormField<String>(
+                    decoration: InputDecoration(labelText: "Select an option"),
                     value: _dropdownValues[key],
                     onChanged: (String? newValue) {
                       setState(() {
                         _dropdownValues[key] = newValue ?? '';
                       });
                     },
-                    items: question.option.map((String option) {
-                      return DropdownMenuItem<String>(
+                    items: (question['options'] as List<dynamic>).map((option) => DropdownMenuItem<String>(
                         value: option,
-                        child: Text(option),
-                      );
-                    }).toList(),
-                    decoration: InputDecoration(
-                      labelText: "Select an option",
-                    ),
+                        child: Text(option.toString()),
+                      ))
+                    .toList(),
                     validator: (value) {
-                      if (question.required && (value == null || value.isEmpty)) {
-                        return '${question.question} is required';
+                      if (question['required'] && (value == null || value.isEmpty)) {
+                        return '${question['question']} is required';
                       }
                       return null;
                     },
@@ -162,25 +196,63 @@ class _CreateFormState extends State<CreateForm> {
             ),
           );
           break;
-      }
-    }
+        
+        case 'multiple':
+          fields.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(question['question']),
+                  ...question['options'].map((opt) {
+                    return RadioListTile<String>(
+                      title: Text(opt),
+                      value: opt,
+                      groupValue: _multipleValues[key], 
+                      onChanged: (String? value) {
+                        setState(() {
+                          _multipleValues[key] = value ?? '';
+                        });
+                      },
+                    );
+                  })//.toList(),
+                ],
+              ),
+            ),
+          );
+          break;
 
-    return Column(children: fields);
+      }
+    });
+
+    return fields;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fill Form'),
+        title: const Text('Create Form'),
       ),
-      body: Padding(
+      body: isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : templateData == null || templateData!['questions'] == null
+          ? const Center(
+            child: Text("Template doesn't exist!",
+            style: TextStyle(fontSize:18),
+            ),
+        )
+      : Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              _buildFormFields(),
+              ListTile(
+                title: Text(templateData?['title']),
+              ),
+              ..._buildFormFields(templateData?['questions']),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _saveForm,
