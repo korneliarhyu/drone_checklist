@@ -10,4 +10,11 @@ class Template {
       templateName: json['templateName'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'templateName': templateName,
+    };
+  }
 }

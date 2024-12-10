@@ -9,9 +9,9 @@ class TemplateListView extends StatelessWidget {
   const TemplateListView({super.key});
 
   Future<List<Template>> _fetchTemplates() async {
-    final dio = Dio();
-    final client = ApiService(dio);
+    final client = ApiService(Dio(BaseOptions(contentType: "application/json")));
     return await client.getAllTemplate();
+
   }
 
   // masih pakai database
