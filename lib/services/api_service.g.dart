@@ -79,19 +79,19 @@ class _ApiService implements ApiService {
   }
 
   @override
-  Future<dynamic> getSubmissionById(int id) async {
+  Future<List<Template>> getAllTemplate() async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'id': id};
+    final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<dynamic>(Options(
+    final _options = _setStreamType<List<Template>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
     )
         .compose(
           _dio.options,
-          'class/database/submission.php',
+          'class/database/template/all.php',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -100,8 +100,16 @@ class _ApiService implements ApiService {
           _dio.options.baseUrl,
           baseUrl,
         )));
-    final _result = await _dio.fetch(_options);
-    final _value = _result.data;
+    final _result = await _dio.fetch<List<dynamic>>(_options);
+    late List<Template> _value;
+    try {
+      _value = _result.data!
+          .map((dynamic i) => Template.fromJson(i as Map<String, dynamic>))
+          .toList();
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
     return _value;
   }
 

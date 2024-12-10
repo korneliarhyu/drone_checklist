@@ -1,13 +1,23 @@
 import 'package:drone_checklist/database/database_helper.dart';
 import 'package:drone_checklist/view/template_detail.dart';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:drone_checklist/model/json_model.dart';
+import 'package:drone_checklist/services/api_service.dart';
 
 class TemplateListView extends StatelessWidget {
   const TemplateListView({super.key});
 
-  Future<List<Map<String, dynamic>>> _fetchTemplates() async {
-    return await DatabaseHelper.getAllDummyTemplates();
+  Future<List<Template>> _fetchTemplates() async {
+    final dio = Dio();
+    final client = ApiService(dio);
+    return await client.getAllTemplate();
   }
+
+  // masih pakai database
+  // Future<List<Map<String, dynamic>>> _fetchTemplates() async {
+  //   return await DatabaseHelper.getAllDummyTemplates();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -22,46 +32,35 @@ class TemplateListView extends StatelessWidget {
             icon: const Icon(Icons.arrow_back),
           ),
         ),
-
-        body: FutureBuilder<List<Map<String, dynamic>>>(
-          // fetch seluruh template (getAllTemplates)
+        body: FutureBuilder<List<Template>>(
           future: _fetchTemplates(),
           builder: (context, snapshot) {
-            // snapshot digunakan untuk mengecek kondisi secara async (data akan bekerja di background)
-
             if (snapshot.connectionState == ConnectionState.waiting) {
-              // loading data = anggaplah template masih otw di kurir.
               return const Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              // case kalau error = template hilang
               return Center(child: Text("Error: ${snapshot.error}"));
-            } else if (snapshot.data != null && snapshot.data!.isEmpty) {
-              // data tidak null, tetapi isinya kosong = templatenya ada, tapi datanya kosong.
-              return const Center(child: Text("No templates available."));
-            } else {
-              // tempaltenya ada dan sampai ke aplikasi. kemudian unboxing untuk lihat data di dalamnya.
+            } else if (snapshot.hasData) {
+              if (snapshot.data!.isEmpty) {
+                return const Center(child: Text("No templates available."));
+              }
               return ListView.builder(
                 itemCount: snapshot.data!.length,
                 itemBuilder: (context, index) {
-                  var dummy_template = snapshot.data![index];
+                  var template = snapshot.data![index];
                   return Card(
                     margin: const EdgeInsets.all(15),
                     child: ListTile(
-                      title: Text(
-                        dummy_template['templateName'],
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TemplateDetail(
-                              dummyTemplateId: dummy_template['templateId']),
-                        ),
-                      ),
+                      title: Text(template.templateName,
+                          style: const TextStyle(fontSize: 20)),
+                      onTap: () {
+                        // Handle navigation or further actions
+                      },
                     ),
                   );
                 },
               );
+            } else {
+              return const Center(child: Text("No data available"));
             }
           },
         ),
