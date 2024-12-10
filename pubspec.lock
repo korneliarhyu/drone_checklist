@@ -190,6 +190,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  dquery:
+    dependency: "direct main"
+    description:
+      name: dquery
+      sha256: fbce999e1fb03caa507b34d04f1e8d57d076b4552012c6de65664c48d3c31c64
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.0+1"
   fake_async:
     dependency: transitive
     description:
@@ -288,6 +296,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
+  intl:
+    dependency: transitive
+    description:
+      name: intl
+      sha256: "00f33b908655e606b86d2ade4710a231b802eec6f11e87e4ea3783fd72077a50"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.20.1"
   io:
     dependency: transitive
     description:

@@ -16,6 +16,7 @@ dependencies:
   dio: ^5.7.0
   retrofit: ^4.4.1
   retrofit_generator: ^9.1.5
+  dquery: ^3.0.0+1
 
 dev_dependencies:
   flutter_test:
