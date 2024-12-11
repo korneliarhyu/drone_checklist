@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drone_checklist/database/database_helper.dart';
 import 'package:drone_checklist/view/template_detail.dart';
 import 'package:flutter/material.dart';
@@ -9,9 +11,23 @@ class TemplateListView extends StatelessWidget {
   const TemplateListView({super.key});
 
   Future<List<Template>> _fetchTemplates() async {
-    final client = ApiService(Dio(BaseOptions(contentType: "application/json")));
-    return await client.getAllTemplate();
-
+    try {
+      final dio = Dio();
+      final client = ApiService(dio);
+      String responseData = await client.getAllTemplate();
+      if (responseData.isNotEmpty) {
+        var jsonData = jsonDecode(responseData);
+        List<Template> templates =
+            List.from(jsonData.map((model) => Template.fromJson(model)));
+        return templates;
+      } else {
+        throw Exception("No data received from the server");
+      }
+    } catch (e, s) {
+      print("Error fetching templates: $e");
+      print("stacktrace: $s");
+      rethrow;
+    }
   }
 
   // masih pakai database

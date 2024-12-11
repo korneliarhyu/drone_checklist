@@ -18,5 +18,6 @@ abstract class ApiService {
 
   // Get All Template
   @GET("class/database/template/all.php")
-  Future<List<Template>> getAllTemplate();
+  // return type dari server berupa string
+  Future<String> getAllTemplate();
 }
