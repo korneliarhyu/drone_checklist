@@ -10,30 +10,31 @@ import 'package:drone_checklist/services/api_service.dart';
 class TemplateListView extends StatelessWidget {
   const TemplateListView({super.key});
 
-  Future<List<Template>> _fetchTemplates() async {
-    try {
-      final dio = Dio();
-      final client = ApiService(dio);
-      String responseData = await client.getAllTemplate();
-      if (responseData.isNotEmpty) {
-        var jsonData = jsonDecode(responseData);
-        List<Template> templates =
-            List.from(jsonData.map((model) => Template.fromJson(model)));
-        return templates;
-      } else {
-        throw Exception("No data received from the server");
-      }
-    } catch (e, s) {
-      print("Error fetching templates: $e");
-      print("stacktrace: $s");
-      rethrow;
-    }
-  }
+  // pakai API
+  // Future<List<Template>> _fetchTemplates() async {
+  //   try {
+  //     final dio = Dio();
+  //     final client = ApiService(dio);
+  //     String responseData = await client.getAllTemplate();
+  //     if (responseData.isNotEmpty) {
+  //       var jsonData = jsonDecode(responseData);
+  //       List<Template> templates =
+  //           List.from(jsonData.map((model) => Template.fromJson(model)));
+  //       return templates;
+  //     } else {
+  //       throw Exception("No data received from the server");
+  //     }
+  //   } catch (e, s) {
+  //     print("Error fetching templates: $e");
+  //     print("stacktrace: $s");
+  //     rethrow;
+  //   }
+  // }
 
   // masih pakai database
-  // Future<List<Map<String, dynamic>>> _fetchTemplates() async {
-  //   return await DatabaseHelper.getAllDummyTemplates();
-  // }
+  Future<List<Map<String, dynamic>>> _fetchTemplates() async {
+    return await DatabaseHelper.getAllDummyTemplates();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +49,12 @@ class TemplateListView extends StatelessWidget {
             icon: const Icon(Icons.arrow_back),
           ),
         ),
-        body: FutureBuilder<List<Template>>(
+        //Menggunakan database gunakan List<Map<String, dynamic>>
+        body: FutureBuilder<List<Map<String, dynamic>>>
+
+            //Menggunakan API gunakan List<Template>
+            // body: FutureBuilder<List<Template>>
+            (
           future: _fetchTemplates(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -66,9 +72,19 @@ class TemplateListView extends StatelessWidget {
                   return Card(
                     margin: const EdgeInsets.all(15),
                     child: ListTile(
-                      title: Text(template.templateName,
+                      // menggunakan Database
+                      title: Text(template['templateName'],
+
+                          // menggunakan API
+                          // title: Text(template.templateName,
                           style: const TextStyle(fontSize: 20)),
                       onTap: () {
+                            // onTap hanya bisa menggunakan database / belum ada API nya
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    TemplateDetail(dummyTemplateId: template['templateId'])));
                         // Handle navigation or further actions
                       },
                     ),
