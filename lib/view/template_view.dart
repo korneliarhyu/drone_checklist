@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:drone_checklist/database/database_helper.dart';
 import 'package:drone_checklist/view/template_detail.dart';
 import 'package:flutter/material.dart';
@@ -11,30 +10,30 @@ class TemplateListView extends StatelessWidget {
   const TemplateListView({super.key});
 
   // pakai API
-  // Future<List<Template>> _fetchTemplates() async {
-  //   try {
-  //     final dio = Dio();
-  //     final client = ApiService(dio);
-  //     String responseData = await client.getAllTemplate();
-  //     if (responseData.isNotEmpty) {
-  //       var jsonData = jsonDecode(responseData);
-  //       List<Template> templates =
-  //           List.from(jsonData.map((model) => Template.fromJson(model)));
-  //       return templates;
-  //     } else {
-  //       throw Exception("No data received from the server");
-  //     }
-  //   } catch (e, s) {
-  //     print("Error fetching templates: $e");
-  //     print("stacktrace: $s");
-  //     rethrow;
-  //   }
-  // }
+  Future<List<Template>> _fetchTemplates() async {
+    try {
+      final dio = Dio();
+      final client = ApiService(dio);
+      String responseData = await client.getAllTemplate();
+      if (responseData.isNotEmpty) {
+        var jsonData = jsonDecode(responseData);
+        List<Template> templates =
+            List.from(jsonData.map((model) => Template.fromJson(model)));
+        return templates;
+      } else {
+        throw Exception("No data received from the server");
+      }
+    } catch (e, s) {
+      print("Error fetching templates: $e");
+      print("stacktrace: $s");
+      rethrow;
+    }
+  }
 
   // masih pakai database
-  Future<List<Map<String, dynamic>>> _fetchTemplates() async {
-    return await DatabaseHelper.getAllDummyTemplates();
-  }
+  // Future<List<Map<String, dynamic>>> _fetchTemplates() async {
+  //   return await DatabaseHelper.getAllDummyTemplates();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -50,10 +49,10 @@ class TemplateListView extends StatelessWidget {
           ),
         ),
         //Menggunakan database gunakan List<Map<String, dynamic>>
-        body: FutureBuilder<List<Map<String, dynamic>>>
+        //body: FutureBuilder<List<Map<String, dynamic>>>
 
             //Menggunakan API gunakan List<Template>
-            // body: FutureBuilder<List<Template>>
+            body: FutureBuilder<List<Template>>
             (
           future: _fetchTemplates(),
           builder: (context, snapshot) {
@@ -73,10 +72,10 @@ class TemplateListView extends StatelessWidget {
                     margin: const EdgeInsets.all(15),
                     child: ListTile(
                       // menggunakan Database
-                      title: Text(template['templateName'],
+                      //title: Text(template['templateName'],
 
                           // menggunakan API
-                          // title: Text(template.templateName,
+                          title: Text(template.templateName,
                           style: const TextStyle(fontSize: 20)),
                       onTap: () {
                             // onTap hanya bisa menggunakan database / belum ada API nya
@@ -84,7 +83,10 @@ class TemplateListView extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                                 builder: (context) =>
-                                    TemplateDetail(dummyTemplateId: template['templateId'])));
+                                    TemplateDetail(
+                                        templateId: template.id,
+                                        //templateData: template.templateData
+                                    )));
                         // Handle navigation or further actions
                       },
                     ),
