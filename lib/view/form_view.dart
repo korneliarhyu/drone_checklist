@@ -1,13 +1,13 @@
 import 'package:drone_checklist/database/database_helper.dart';
 import 'package:drone_checklist/view/form_detail.dart';
 import 'package:flutter/material.dart';
-import 'package:drone_checklist/view/checklist_form_create.dart';
+import 'package:drone_checklist/view/form_create.dart';
 import 'package:drone_checklist/view/template_view.dart';
 import 'package:drone_checklist/view/template_select.dart';
 
 int currTemplate = 1;
 
-class ChecklistFormView extends StatefulWidget {
+class FormCreate extends StatefulWidget {
   //const ButtonSection({super.key});
 
   //final Questions templateQuestions;
@@ -18,10 +18,10 @@ class ChecklistFormView extends StatefulWidget {
   // });
 
   @override
-  _ChecklistFormViewState createState() => _ChecklistFormViewState();
+  _FormCreateState createState() => _FormCreateState();
 }
 
-class _ChecklistFormViewState extends State<ChecklistFormView> {
+class _FormCreateState extends State<FormCreate> {
   List<Map<String, dynamic>> _formList = [];
 
   void _callData() async {
@@ -66,7 +66,7 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TemplateListView(),
+        builder: (context) => TemplateView(),
       ),
     );
   }
@@ -145,11 +145,12 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
               itemBuilder: (context, index) => Card(
                 margin: const EdgeInsets.all(15),
                 child: ListTile(
+                  leading:const Icon(Icons.description, color: Colors.blue),
                   title: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 5),
                     child: Text(
                       _formList[index]['formName'],
-                      style: const TextStyle(fontSize: 20),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                   ),
                   onTap: () => Navigator.push(
