@@ -1,13 +1,21 @@
 import 'package:drone_checklist/database/database_helper.dart';
-import 'package:drone_checklist/services/api_service.dart';
+import 'package:drone_checklist/view/form_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/view/checklist_form_create.dart';
-import 'package:drone_checklist/model/template_question.dart';
+import 'package:drone_checklist/view/template_view.dart';
+import 'package:drone_checklist/view/template_select.dart';
+
+int currTemplate = 1;
 
 class ChecklistFormView extends StatefulWidget {
-  final Questions templateQuestions;
+  //const ButtonSection({super.key});
 
-  const ChecklistFormView({super.key, required this.templateQuestions});
+  //final Questions templateQuestions;
+
+  //parameter yang di main itu di set disini
+  // const ChecklistFormView({
+  //   super.key, required this.templateQuestions
+  // });
 
   @override
   _ChecklistFormViewState createState() => _ChecklistFormViewState();
@@ -17,15 +25,17 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
   List<Map<String, dynamic>> _formList = [];
 
   void _callData() async {
-    var listData = await DatabaseHelper.getAllData();
+    var listData = await DatabaseHelper.getAllChecklist();
 
-    _formList = listData.map((element){
-      return{
+    _formList = listData.map((element) {
+      return {
         'formId': element['formId'],
         'formName': element['formName'],
+        'isChecked': false,
       };
     }).toList();
-    print("Fetched data: $_formList");
+    //debug fetching data from database
+    //print("Fetched data: $_formList");
 
     setState(() {});
   }
@@ -33,8 +43,8 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
   @override
   void initState() {
     // TODO: implement initState
-    super.initState();
     _callData();
+    super.initState();
   }
 
   void _navigateToCreateForm() async {
@@ -43,23 +53,86 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            CreateForm(templateQuestions: widget.templateQuestions),
+        builder: (context) => SelectForm(),
+        // CreateForm(
+        //     //templateQuestions: widget.templateQuestions,
+        //     templateId: currTemplate),
       ),
     );
-    if (result != null && result is String) {
-      _callData();
+    _callData();
+  }
+
+  void _navigateToTemplatesList() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TemplateListView(),
+      ),
+    );
+  }
+
+  void _insertDummyTemplate() async {
+    try {
+      // variable templateId akan menyimpan templateId dari dummy.
+      int templateId = await DatabaseHelper.insertDummyTemplate();
+      print('Template successfully inserted with ID: $templateId');
+    } catch (e) {
+      print('Error inserting template: $e');
     }
+  }
+
+  void _sync() async {
+    List<int> selectedForms = _formList
+        .where((form) => form['isChecked'] == true)
+        .map((form) => form['formId'] as int)
+        .toList();
+
+    //debug ambil id yang dipilih
+    print("Syncing ID(s): $selectedForms");
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Checklist Form View')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToCreateForm,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: Stack(children: [
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: FloatingActionButton(
+            heroTag: "createForm",
+            onPressed: _navigateToCreateForm,
+            child: const Icon(Icons.add),
+          ),
+        ),
+        Positioned(
+          bottom: 16,
+          right: 80,
+          child: FloatingActionButton(
+            heroTag: "templateList",
+            onPressed: _navigateToTemplatesList,
+            child: const Icon(Icons.list),
+          ),
+        ),
+        Positioned(
+          bottom: 16,
+          right: 145,
+          child: FloatingActionButton(
+            heroTag: "insertTemp",
+            onPressed: _insertDummyTemplate,
+            child: const Icon(Icons.access_time_sharp),
+          ),
+        ),
+        Positioned(
+          bottom: 16,
+          right: 209,
+          child: FloatingActionButton(
+            heroTag: "sync",
+            onPressed: _sync,
+            child: const Icon(Icons.cloud_upload),
+          ),
+        ),
+      ]),
       body: _formList.isEmpty
           ? const Center(
               child: Text(
@@ -79,19 +152,18 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
                       style: const TextStyle(fontSize: 20),
                     ),
                   ),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FormDetail(
+                        formId: _formList[index]
+                            ['formId'], // Pass the selected form ID
+                      ),
+                    ),
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        onPressed: () {
-                          // edit()
-                        },
-                        icon: const Icon(
-                          Icons.edit,
-                          color: Colors.indigo,
-                        ),
-                      ),
-
                       IconButton(
                         onPressed: () async {
                           int formId = _formList[index]['formId'];
@@ -104,6 +176,16 @@ class _ChecklistFormViewState extends State<ChecklistFormView> {
                           Icons.delete,
                           color: Colors.redAccent,
                         ),
+                      ),
+                      Checkbox(
+                        value: _formList[index]['isChecked'] ?? false,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            _formList[index]['isChecked'] = value ?? false;
+                          });
+                          //debug changestate
+                          // print('Checkbox formId: ${_formList[index]['formId']} set to $value');
+                        },
                       ),
                     ],
                   ),

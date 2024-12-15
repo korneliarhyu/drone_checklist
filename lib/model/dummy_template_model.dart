@@ -1,4 +1,4 @@
-class TemplatelistModel {
+class DummyTemplateModel {
   final int templateId;
   final String templateName;
   final String formType;
@@ -6,7 +6,7 @@ class TemplatelistModel {
   final Map<String, dynamic> templateFormData;
   final DateTime deletedAt;
 
-  TemplatelistModel({
+  DummyTemplateModel({
     required this.templateId,
     required this.templateName,
     required this.formType,
