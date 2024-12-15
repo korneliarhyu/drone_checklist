@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:dio/dio.dart';
 import 'package:drone_checklist/database/database_helper.dart';
+import 'package:drone_checklist/helper/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/services/api_service.dart';
+
 
 class TemplateDetail extends StatefulWidget {
   final int templateId;
@@ -34,8 +37,10 @@ class _TemplateDetailState extends State<TemplateDetail> {
       final dio = Dio();
       final apiService = ApiService(dio);
 
+      // API untuk mendapatkan detail template adalah downloadTemplate(templateId);
       final response = await apiService.downloadTemplate(templateId);
 
+      // response API diconvert ke dalam codingan menggunakan jsonDecode.
       final Map<String, dynamic> templateData = jsonDecode(response);
 
       //debug
@@ -43,6 +48,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
       // _templateData = templateData;
 
       setState(() {
+        // menampung return API ke state _templateData;
         _templateData = templateData;
         _isLoading = false;
       });
@@ -65,25 +71,57 @@ class _TemplateDetailState extends State<TemplateDetail> {
   }
 
   Future<bool> _downloadTemplate(int templateId) async {
-    try{
-      var dummyTemplate = await DatabaseHelper.getDummyTemplateById(templateId);
-      if (dummyTemplate == null) {
+    try {
+      await _loadTemplateData(templateId);
+
+      if (_templateData.isEmpty) {
+        print("Template data is empty or not found");
         return false;
       } else {
-        Map<String, dynamic> templateData = {
-          'templateName': dummyTemplate['templateName'],
-          'formType': dummyTemplate['formType'],
-          'updatedDate': DateTime.now().toString(),
-          'templateFormData': dummyTemplate['templateFormData'],
-          'deletedAt': null
+        // Jika data tidak kosong, mapping seluruh data dari state _templateData.
+        // Key: String, Value: dynamic.
+        Map <String, dynamic> templateData = {
+          // 'nama data dari model' : servis yang memiliki return dari API ['nama json'],
+          'serverTemplateId' : _templateData['id'],
+          'templateName' : _templateData['templateName'],
+          'formType' : 'assessment-pre-post',
+          'updatedDate' : DateTime.now().toString(),
+          'templateFormData' : {
+            'assessment' : _templateData['assessment'],
+            'pre' : _templateData['pre'],
+            'post' : _templateData['post'],
+          },
+          'deletedAt' : null,
         };
+
         DatabaseHelper.insertTemplate(templateData);
         return true;
       }
     } catch (e) {
-      print('Error: $e');
+      print("Error: $e");
       return false;
     }
+
+    //   Menggunakkan local Database
+    // try{
+    //   var dummyTemplate = await DatabaseHelper.getDummyTemplateById(templateId);
+    //   if (dummyTemplate == null) {
+    //     return false;
+    //   } else {
+    //     Map<String, dynamic> templateData = {
+    //       'templateName': dummyTemplate['templateName'],
+    //       'formType': dummyTemplate['formType'],
+    //       'updatedDate': DateTime.now().toString(),
+    //       'templateFormData': dummyTemplate['templateFormData'],
+    //       'deletedAt': null
+    //     };
+    //     DatabaseHelper.insertTemplate(templateData);
+    //     return true;
+    //   }
+    // } catch (e) {
+    //   print('Error: $e');
+    //   return false;
+    // }
   }
 
   @override
@@ -120,9 +158,27 @@ class _TemplateDetailState extends State<TemplateDetail> {
             bottom: 16,
             right: 16,  // Atur posisi di kanan bawah
             child: FloatingActionButton.extended(
-              onPressed: () {
+              onPressed: () async {
                 // Tambahkan fungsi unduh data di sini
-                _downloadTemplate(widget.templateId);
+                // _downloadTemplate(widget.templateId);
+                
+                // menggunakan flash-message(snackbar)
+                bool downloadSuccess = await _downloadTemplate(widget.templateId);
+
+                if (downloadSuccess) {
+                  showAwesomeSnackbar(context, "Success!", "Template downloaded successfully", ContentType.success);
+                } else {
+                  showAwesomeSnackbar(context, "Failed!!", "Template failed to download", ContentType.failure);
+                }
+
+                // Refresh page
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) =>
+                        TemplateDetail(templateId: widget.templateId)
+                    )
+                );
+
                 print('Download Data');
               },
               icon: Icon(Icons.download),

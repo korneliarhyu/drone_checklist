@@ -6,15 +6,17 @@ import 'package:dio/dio.dart';
 import 'package:drone_checklist/model/json_model.dart';
 import 'package:drone_checklist/services/api_service.dart';
 
-class TemplateListView extends StatelessWidget {
-  const TemplateListView({super.key});
+class TemplateView extends StatelessWidget {
+  const TemplateView({super.key});
 
   // pakai API
   Future<List<Template>> _fetchTemplates() async {
     try {
       final dio = Dio();
       final client = ApiService(dio);
+
       String responseData = await client.getAllTemplate();
+
       if (responseData.isNotEmpty) {
         var jsonData = jsonDecode(responseData);
         List<Template> templates =

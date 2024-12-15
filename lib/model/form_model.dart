@@ -1,4 +1,4 @@
-class ChecklistFormModel {
+class FormModel {
   final int? formId;
   final int templateId;
   final String formName;
@@ -6,7 +6,7 @@ class ChecklistFormModel {
   final Map<String, dynamic> formData;
   final DateTime? deletedAt;
 
-  ChecklistFormModel({
+  FormModel({
     required this.formId,
     required this.templateId,
     required this.formName,
@@ -28,8 +28,8 @@ class ChecklistFormModel {
   }
 
   // Create model from JSON/Map
-  factory ChecklistFormModel.fromJson(Map<String, dynamic> json) {
-    return ChecklistFormModel(
+  factory FormModel.fromJson(Map<String, dynamic> json) {
+    return FormModel(
       formId: json['formId'],
       templateId: json['templateId'],
       formName: json['formName'],

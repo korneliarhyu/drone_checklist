@@ -1,6 +1,6 @@
 import 'package:drone_checklist/database/database_helper.dart';
 import 'package:flutter/material.dart';
-import 'checklist_form_create.dart';
+import 'form_create.dart';
 
 class SelectForm extends StatelessWidget {
   const SelectForm({super.key});
@@ -46,17 +46,12 @@ class SelectForm extends StatelessWidget {
                         chosenTemp['templateName'],
                         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text(
-                        'Template ID: ${chosenTemp['templateId']}',
-                        style: const TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
                       trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey), // Trailing icon
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => CreateForm(
                             templateId: chosenTemp['templateId'],
-                            templateName: chosenTemp['templateName'],
                           ),
                         ),
                       ),

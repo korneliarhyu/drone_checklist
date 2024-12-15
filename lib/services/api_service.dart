@@ -8,7 +8,7 @@ part 'api_service.g.dart';
 abstract class ApiService {
   factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
 
-  // Download API
+  // Get Template Detail from Server
   @GET("class/database/download.php")
   Future<dynamic> downloadTemplate(@Query("templateId") int templateId);
 
@@ -16,8 +16,7 @@ abstract class ApiService {
   @POST("class/database/syncData.php")
   Future<dynamic> syncData(@Body() Map<String, dynamic> data);
 
-  // Get All Template
+  // Get All Template from Server
   @GET("class/database/template/all.php")
-  // return type dari server berupa string
   Future<String> getAllTemplate();
 }
