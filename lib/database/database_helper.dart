@@ -1,5 +1,5 @@
-import 'package:drone_checklist/model/checklist_form_model.dart';
-import 'package:drone_checklist/model/template_list_model.dart';
+import 'package:drone_checklist/model/form_model.dart';
+import 'package:drone_checklist/model/template_model.dart';
 import 'package:drone_checklist/model/dummy_template_model.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
 import 'package:path_provider/path_provider.dart';
@@ -14,7 +14,8 @@ class DatabaseHelper {
     //membuat table template
     await database.execute('''CREATE TABLE template(
       templateId INTEGER PRIMARY KEY AUTOINCREMENT,
-      templateName TEXT,
+      serverTemplateId INTEGER,
+      templateName TEXT,      
       formType TEXT,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       templateFormData TEXT,
@@ -60,7 +61,7 @@ class DatabaseHelper {
     );
   }
 
-  static Future<int> createChecklistForm(ChecklistFormModel model) async {
+  static Future<int> createForm(FormModel model) async {
     final db = await DatabaseHelper.db();
 
     final form = {
@@ -128,7 +129,7 @@ class DatabaseHelper {
     return null;
   }
 
-  static Future<Map<String, dynamic>?> getTemplateById(int id) async {
+  static Future<Map<String, dynamic>> getTemplateById(int id) async {
     final db = await DatabaseHelper.db();
     List<Map> results = await db.query(
       'template',
@@ -139,7 +140,7 @@ class DatabaseHelper {
     if (results.isNotEmpty) {
       return Map<String, dynamic>.from(results.first);
     }
-     return null;
+     return <String, dynamic>{};
   }
 
   static Future<int> updateForm(
