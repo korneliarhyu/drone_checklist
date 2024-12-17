@@ -1,7 +1,6 @@
 import 'package:drone_checklist/database/database_helper.dart';
 import 'package:drone_checklist/view/form_detail.dart';
 import 'package:flutter/material.dart';
-import 'package:drone_checklist/view/form_create.dart';
 import 'package:drone_checklist/view/template_view.dart';
 import 'package:drone_checklist/view/template_select.dart';
 
@@ -71,16 +70,6 @@ class _FormCreateState extends State<FormCreate> {
     );
   }
 
-  void _insertDummyTemplate() async {
-    try {
-      // variable templateId akan menyimpan templateId dari dummy.
-      int templateId = await DatabaseHelper.insertDummyTemplate();
-      print('Template successfully inserted with ID: $templateId');
-    } catch (e) {
-      print('Error inserting template: $e');
-    }
-  }
-
   void _sync() async {
     List<int> selectedForms = _formList
         .where((form) => form['isChecked'] == true)
@@ -114,15 +103,15 @@ class _FormCreateState extends State<FormCreate> {
             child: const Icon(Icons.list),
           ),
         ),
-        Positioned(
-          bottom: 16,
-          right: 145,
-          child: FloatingActionButton(
-            heroTag: "insertTemp",
-            onPressed: _insertDummyTemplate,
-            child: const Icon(Icons.access_time_sharp),
-          ),
-        ),
+        // Positioned(
+        //   bottom: 16,
+        //   right: 145,
+        //   child: FloatingActionButton(
+        //     heroTag: "insertTemp",
+        //     onPressed: _insertDummyTemplate,
+        //     child: const Icon(Icons.access_time_sharp),
+        //   ),
+        // ),
         Positioned(
           bottom: 16,
           right: 209,

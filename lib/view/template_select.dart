@@ -2,11 +2,34 @@ import 'package:drone_checklist/database/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'form_create.dart';
 
-class SelectForm extends StatelessWidget {
+class SelectForm extends StatefulWidget {
   const SelectForm({super.key});
+
+  @override
+  _SelectFormState createState() => _SelectFormState();
+}
+
+class _SelectFormState extends State<SelectForm> {
+
+  late Future<List<Map<String, dynamic>>> _templatesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _templatesFuture = _fetchTemplates();
+  }
 
   Future<List<Map<String, dynamic>>> _fetchTemplates() async {
     return await DatabaseHelper.getAllTemplates();
+  }
+
+  Future<void> _deleteTemplate(int templateId) async {
+    await DatabaseHelper.deleteTemplate(templateId);
+
+    //refresh list
+    setState(() {
+      _templatesFuture = _fetchTemplates();
+    });
   }
 
   @override
@@ -23,7 +46,7 @@ class SelectForm extends StatelessWidget {
           ),
         ),
         body: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _fetchTemplates(),
+          future: _templatesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -46,7 +69,17 @@ class SelectForm extends StatelessWidget {
                         chosenTemp['templateName'],
                         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                      trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey), // Trailing icon
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _deleteTemplate(chosenTemp['templateId']),
+                          ),
+                          const Icon(Icons.arrow_forward_ios, color: Colors.grey),
+                        ],
+                      ),
+                       // Trailing icon
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(

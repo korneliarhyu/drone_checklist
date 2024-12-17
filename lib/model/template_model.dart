@@ -12,7 +12,7 @@ class TemplateModel {
   final String formType;
   final DateTime updatedDate;
   final Map<String, dynamic> templateFormData;
-  final DateTime deletedAt;
+  final DateTime? deletedAt;
 
   TemplateModel({
     required this.templateId,
@@ -21,6 +21,6 @@ class TemplateModel {
     required this.formType,
     required this.updatedDate,
     required this.templateFormData,
-    required this.deletedAt,
+    this.deletedAt,
   });
 }
