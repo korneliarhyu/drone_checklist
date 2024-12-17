@@ -1,7 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
-import 'package:drone_checklist/model/json_model.dart';
-
 part 'api_service.g.dart';
 
 @RestApi(baseUrl: "http://103.102.152.249/webdrone/")

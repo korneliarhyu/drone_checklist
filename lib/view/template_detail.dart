@@ -59,15 +59,6 @@ class _TemplateDetailState extends State<TemplateDetail> {
         _templateData = {};
       });
     }
-    //before
-    // var templateData = await DatabaseHelper.getDummyTemplateById(templateId);
-    // if (templateData != null) {
-    //   setState(() {
-    //     _templateData = jsonDecode(templateData['templateFormData']);
-    //   });
-    // } else {
-    //   print("Template not found");
-    // }
   }
 
   Future<bool> _downloadTemplate(int templateId) async {
@@ -78,6 +69,12 @@ class _TemplateDetailState extends State<TemplateDetail> {
         print("Template data is empty or not found");
         return false;
       } else {
+        String serializeForm = json.encode({
+          'assessment' : _templateData['assessment'],
+          'pre' : _templateData['pre'],
+          'post' : _templateData['post']
+        });
+
         // Jika data tidak kosong, mapping seluruh data dari state _templateData.
         // Key: String, Value: dynamic.
         Map <String, dynamic> templateData = {
@@ -86,11 +83,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
           'templateName' : _templateData['templateName'],
           'formType' : 'assessment-pre-post',
           'updatedDate' : DateTime.now().toString(),
-          'templateFormData' : {
-            'assessment' : _templateData['assessment'],
-            'pre' : _templateData['pre'],
-            'post' : _templateData['post'],
-          },
+          'templateFormData' : serializeForm,
           'deletedAt' : null,
         };
 
@@ -102,26 +95,6 @@ class _TemplateDetailState extends State<TemplateDetail> {
       return false;
     }
 
-    //   Menggunakkan local Database
-    // try{
-    //   var dummyTemplate = await DatabaseHelper.getDummyTemplateById(templateId);
-    //   if (dummyTemplate == null) {
-    //     return false;
-    //   } else {
-    //     Map<String, dynamic> templateData = {
-    //       'templateName': dummyTemplate['templateName'],
-    //       'formType': dummyTemplate['formType'],
-    //       'updatedDate': DateTime.now().toString(),
-    //       'templateFormData': dummyTemplate['templateFormData'],
-    //       'deletedAt': null
-    //     };
-    //     DatabaseHelper.insertTemplate(templateData);
-    //     return true;
-    //   }
-    // } catch (e) {
-    //   print('Error: $e');
-    //   return false;
-    // }
   }
 
   @override
@@ -140,16 +113,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
                 _buildSection('Assessment', _templateData),
                 _buildSection('Pre-Check', _templateData),
                 _buildSection('Post-Check', _templateData),
-              // if(_templateData['pre'] != null)
-              //   _buildSection('Pre-Check', _templateData['pre']),
-              // if(_templateData['post'] != null)
-              //   _buildSection('Post-Check', _templateData['post']),
-              // ListTile(
-              //   title: Text(_templateData['title']),
-              //   // subtitle: Text("Template ID: ${_templateData['templateId']}"),
-              // ),
-              // //menggunakan spread Operator untuk memasukkan semua widget pertanyaan ke dalam ListView
-              // ..._buildQuestions(_templateData['questions']),
+
             ],
       ),
       floatingActionButton: Stack(
