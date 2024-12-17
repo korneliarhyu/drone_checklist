@@ -22,6 +22,7 @@ class _CreateFormState extends State<CreateForm> {
   final Map<String, String> _dropdownValues = {};
   final Map<String, String> _multipleValues = {};
   final Map<String, String> _textboxValues = {};
+  final Map<String, bool> _checkboxValues = {};
 
   // Membuat dua variable kosong bertype Map _templateData dan _formData untuk menghindari error non-nullable.
   Map<String, dynamic> _templateData = {};
@@ -34,7 +35,23 @@ class _CreateFormState extends State<CreateForm> {
     _getTemplate(widget.templateId);
   }
 
+  void _initializeCheckboxValues() {
+    for (var section in ['assessment', 'pre', 'post']) {
+      if (_formData[section] != null) {
+        _formData[section].forEach((questionId, questionData) {
+          if (questionData['type'] == 'checklist') {
+            questionData['option'].forEach((option) {
+              if (!_checkboxValues.containsKey(option)) {
+                _checkboxValues[option] = false;  // Pastikan menginisialisasi hanya jika belum ada
+              }
+            });
+          }
+        });
+      }
+    }
+  }
   Future<void> _getTemplate(int templateId) async {
+    _initializeCheckboxValues();
     try {
       final response = await DatabaseHelper.getTemplateById(templateId);
 
@@ -122,6 +139,7 @@ class _CreateFormState extends State<CreateForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(question['question']),
+          // Type: Text
           if (question['type'] == 'text' || question['type'] == 'longtext')
             TextFormField(
               controller: controller,
@@ -133,39 +151,52 @@ class _CreateFormState extends State<CreateForm> {
                 return null;
               },
             ),
+          // Type: Checklist
           if (question['type'] == 'checklist')
             ...question['option'].map<Widget>((option) {
               return CheckboxListTile(
                 title: Text(option),
-                value: false,
-                onChanged: (bool? value) {},
+                value:  _checkboxValues[option] ?? false,
+                onChanged: (bool? value) {
+                  // perbarui dengan nilai baru
+                  print(option);
+                  _checkboxValues[option] = value ?? false;
+                },
               );
             }).toList(),
+          // Type: Dropdown button
           if (question['type'] == 'dropdown')
             DropdownButtonFormField<String>(
-              value: null,
+              value: _dropdownValues[question['question']],
               items: question['option'].map<DropdownMenuItem<String>>((option) {
                 return DropdownMenuItem<String>(
                   value: option,
                   child: Text(option),
                 );
               }).toList(),
-              onChanged: (value) {},
+              onChanged: (String? newValue) {
+                setState(() {
+                  _dropdownValues[question['question']] = newValue!;
+                });
+              },
               decoration: InputDecoration(labelText: 'Select one'),
             ),
+          // Type: MultipleChoices (RadioButton)
           if (question['type'] == 'multiple')
             ...question['option'].map<Widget>((option) {
               return RadioListTile<String>(
                 title: Text(option),
                 value: option,
-                groupValue: controller.text,
-                onChanged: (String? value) {
+                groupValue: _multipleValues[question['question']],
+                onChanged: (String? newValue) {
                   setState(() {
-                    controller.text = value!;
+                    _multipleValues[question['question']] = newValue!;
+                    controller.text = newValue;
                   });
                 },
               );
             }).toList(),
+
         ],
       ),
     );
