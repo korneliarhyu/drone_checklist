@@ -7,10 +7,6 @@ import 'package:drone_checklist/view/template_select.dart';
 int currTemplate = 1;
 
 class FormCreate extends StatefulWidget {
-  //const ButtonSection({super.key});
-
-  //final Questions templateQuestions;
-
   //parameter yang di main itu di set disini
   // const ChecklistFormView({
   //   super.key, required this.templateQuestions
@@ -103,18 +99,9 @@ class _FormCreateState extends State<FormCreate> {
             child: const Icon(Icons.list),
           ),
         ),
-        // Positioned(
-        //   bottom: 16,
-        //   right: 145,
-        //   child: FloatingActionButton(
-        //     heroTag: "insertTemp",
-        //     onPressed: _insertDummyTemplate,
-        //     child: const Icon(Icons.access_time_sharp),
-        //   ),
-        // ),
         Positioned(
           bottom: 16,
-          right: 209,
+          right: 145,
           child: FloatingActionButton(
             heroTag: "sync",
             onPressed: _sync,

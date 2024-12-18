@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart' as sqlite;
 import 'dart:convert';
 
 class DatabaseHelper {
-
   static Future<void> createTables(sqlite.Database database) async {
     //aktifkan foreign key
     await database.execute("PRAGMA foreign_keys = ON");
@@ -66,7 +65,6 @@ class DatabaseHelper {
       'deletedAt': null
     };
 
-    
     final formId = await db.insert('form', form);
     final listForm = await db.query("form");
     for (var element in listForm) {
@@ -76,21 +74,60 @@ class DatabaseHelper {
     return formId;
   }
 
-  static Future<List<Map<String, dynamic>>> getAllChecklist() async{
+  static Future<int> updateForm(
+      int formId, String formName, String formData) async {
     final db = await DatabaseHelper.db();
-    return db.query(
-      "form",
-      orderBy: "formId"
-    );
+
+    final form = {
+      // 'formId' : formId,
+      'formName': formName,
+      'formData': formData
+    };
+
+    final result =
+        await db.update("form", form, where: "formId = ?", whereArgs: [formId]);
+
+    return result;
   }
 
-  static Future<List<Map<String, dynamic>>> getAllTemplates() async{
+  static Future<void> deleteForm(int formId) async {
+    final db = await DatabaseHelper.db();
+
+    try {
+      await db.delete('form', where: "formId = ?", whereArgs: [formId]);
+    } catch (e) {
+      print("Delete Failed: $e");
+    }
+  }
+
+  static Future<void> deleteTemplate(int templateId) async {
+    final db = await DatabaseHelper.db();
+
+    try {
+      await db
+          .delete('template', where: "templateId = ?", whereArgs: [templateId]);
+    } catch (e) {
+      print("Delete Failed: $e");
+    }
+  }
+
+  static Future<int> insertTemplate(Map<String, dynamic> templateData) async {
+    final db = await DatabaseHelper.db();
+    return await db.insert("template", templateData);
+  }
+
+  static Future<List<Map<String, dynamic>>> getAllChecklist() async {
+    final db = await DatabaseHelper.db();
+    return db.query("form", orderBy: "formId");
+  }
+
+  static Future<List<Map<String, dynamic>>> getAllTemplates() async {
     final db = await DatabaseHelper.db();
     List<Map<String, dynamic>> templates = await db.query('template');
     return templates;
   }
 
-  static Future<Map <String, dynamic>?> getFormById(int id) async {
+  static Future<Map<String, dynamic>?> getFormById(int id) async {
     final db = await DatabaseHelper.db();
     List<Map> results = await db.query(
       'form',
@@ -115,56 +152,6 @@ class DatabaseHelper {
     if (results.isNotEmpty) {
       return Map<String, dynamic>.from(results.first);
     }
-     return <String, dynamic>{};
+    return <String, dynamic>{};
   }
-
-  static Future<int> updateForm(
-      int formId, int templateId, String formName, String formData) async {
-    final db = await DatabaseHelper.db();
-
-    final form = {
-      // 'formId' : formId,
-      'templateId': templateId,
-      'formName': formName,
-      'formData': formData
-    };
-
-    final result =
-        await db.update("form", form, where: "formId = ?", whereArgs: [formId]);
-
-    return result;
-  }
-
-  static Future<void> deleteForm(int formId) async {
-    final db = await DatabaseHelper.db();
-
-    try {
-      await db.delete(
-          'form',
-          where: "formId = ?",
-          whereArgs: [formId]);
-    } catch (e) {
-      print("Delete Failed: $e");
-    }
-  }
-
-  static Future<void> deleteTemplate(int templateId) async {
-    final db = await DatabaseHelper.db();
-
-    try {
-      await db.delete(
-        'template',
-        where: "templateId = ?",
-        whereArgs: [templateId]
-      );
-    } catch (e) {
-      print("Delete Failed: $e");
-    }
-  }
-
-  static Future<int> insertTemplate(Map<String, dynamic> templateData) async {
-    final db = await DatabaseHelper.db();
-    return await db.insert("template", templateData);
-  }
-
 }

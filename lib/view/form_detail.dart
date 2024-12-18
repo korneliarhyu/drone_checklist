@@ -161,29 +161,6 @@ class _FormDetailState extends State<FormDetail> {
     return questionWidgets;
   }
 
-
-  // List<Widget> _buildQuestions(Map<String, dynamic> questions) {
-  //   List<Widget> questionWidgets = [];
-  //   print("Building questions from: $questions");
-  //
-  //   questions.forEach((key, question) {
-  //     switch (question['type']) {
-  //       case 'text':
-  //         questionWidgets.add(_buildTextQuestion(key, question['prompt']));
-  //         break;
-  //       case 'dropdown':
-  //         questionWidgets.add(_buildDropdownQuestion(key, question['prompt']));
-  //         break;
-  //       case 'checkbox':
-  //         questionWidgets.add(_buildCheckboxQuestion(key, question['prompt']));
-  //         break;
-  //       default:
-  //         print("Unknown question type: ${question['type']}");
-  //     }
-  //   });
-  //   return questionWidgets;
-  // }
-
   // Existing methods for dropdown questions
   Widget _buildDropdownQuestion(String key, Map<String, dynamic> question) {
     return ListTile(

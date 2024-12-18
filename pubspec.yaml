@@ -21,7 +21,6 @@ dependencies:
   built_value: ^8.9.2
   built_value_generator: ^8.9.2
   google_fonts: ^6.2.1
-  awesome_snackbar_content: ^0.1.4
 
 dev_dependencies:
   flutter_test:

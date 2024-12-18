@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:drone_checklist/helper/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/model/form_model.dart';
 import 'package:drone_checklist/Database/database_helper.dart';
@@ -42,7 +43,8 @@ class _CreateFormState extends State<CreateForm> {
           if (questionData['type'] == 'checklist') {
             questionData['option'].forEach((option) {
               if (!_checkboxValues.containsKey(option)) {
-                _checkboxValues[option] = false;  // Pastikan menginisialisasi hanya jika belum ada
+                _checkboxValues[option] =
+                    false; // Pastikan menginisialisasi hanya jika belum ada
               }
             });
           }
@@ -50,6 +52,7 @@ class _CreateFormState extends State<CreateForm> {
       }
     }
   }
+
   Future<void> _getTemplate(int templateId) async {
     _initializeCheckboxValues();
     try {
@@ -94,22 +97,13 @@ class _CreateFormState extends State<CreateForm> {
         templateId: widget.templateId,
         formName: _templateData['templateName'],
         updatedDate: DateTime.now(),
-        formData: formData,
+        formData: _templateData,
       );
 
       try {
         DatabaseHelper.createForm(formModel);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Form Saved!')));
-        // pushReplacement digunakan supaya user tidak dapat kembali ke halaman sebelumnya.
-        // sehingga, ketika user menekan button save, tidak akan bisa kembali ke halaman create/edit form sebelumnya.
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => FormCreate()),
-        );
       } catch (e) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error saving form: $e')));
+        print("Error save: $e");
       }
     }
   }
@@ -119,11 +113,21 @@ class _CreateFormState extends State<CreateForm> {
 
     if (_formData != null) {
       ['assessment', 'pre', 'post'].forEach((section) {
+        fields.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          // Memunculkan judul per-section
+          child: Text(section.toUpperCase(),
+              style: Theme.of(context).textTheme.headlineSmall),
+        ));
         if (_formData[section] != null) {
           _formData[section].forEach((questionId, questionData) {
+            // memberikan unique Key ke masing-masing question di setiap section
+            // section = assessment, pre, post.
+            String uniqueQuestionId = '$section-$questionData';
             TextEditingController controller = TextEditingController();
             _questionControllers[questionId] = controller;
-            fields.add(_buildQuestionField(questionData, controller));
+            fields.add(_buildQuestionField(
+                uniqueQuestionId, questionData, controller));
           });
         }
       });
@@ -131,7 +135,7 @@ class _CreateFormState extends State<CreateForm> {
     return fields;
   }
 
-  Widget _buildQuestionField(
+  Widget _buildQuestionField(String uniqueQuestionId,
       Map<String, dynamic> question, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -139,11 +143,10 @@ class _CreateFormState extends State<CreateForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(question['question']),
-          // Type: Text
           if (question['type'] == 'text' || question['type'] == 'longtext')
             TextFormField(
               controller: controller,
-              decoration: const InputDecoration(labelText: "Answer"),
+              decoration: InputDecoration(labelText: "Answer"),
               validator: (value) {
                 if (question['required'] && (value == null || value.isEmpty)) {
                   return 'This field cannot be empty';
@@ -151,52 +154,49 @@ class _CreateFormState extends State<CreateForm> {
                 return null;
               },
             ),
-          // Type: Checklist
           if (question['type'] == 'checklist')
             ...question['option'].map<Widget>((option) {
+              String checkboxKey = "$uniqueQuestionId-$option";
               return CheckboxListTile(
                 title: Text(option),
-                value:  _checkboxValues[option] ?? false,
+                value: _checkboxValues[checkboxKey] ?? false,
                 onChanged: (bool? value) {
-                  // perbarui dengan nilai baru
-                  print(option);
-                  _checkboxValues[option] = value ?? false;
+                  setState(() {
+                    // perbarui dengan nilai baru
+                    _checkboxValues[checkboxKey] = value ?? false;
+                  });
                 },
               );
             }).toList(),
-          // Type: Dropdown button
           if (question['type'] == 'dropdown')
             DropdownButtonFormField<String>(
-              value: _dropdownValues[question['question']],
+              value: _dropdownValues[uniqueQuestionId],
+              onChanged: (String? newValue) {
+                setState(() {
+                  _dropdownValues[uniqueQuestionId] = newValue ?? "";
+                });
+              },
               items: question['option'].map<DropdownMenuItem<String>>((option) {
                 return DropdownMenuItem<String>(
                   value: option,
                   child: Text(option),
                 );
               }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _dropdownValues[question['question']] = newValue!;
-                });
-              },
               decoration: InputDecoration(labelText: 'Select one'),
             ),
-          // Type: MultipleChoices (RadioButton)
           if (question['type'] == 'multiple')
             ...question['option'].map<Widget>((option) {
               return RadioListTile<String>(
                 title: Text(option),
                 value: option,
-                groupValue: _multipleValues[question['question']],
-                onChanged: (String? newValue) {
+                groupValue: _multipleValues[uniqueQuestionId],
+                onChanged: (String? value) {
                   setState(() {
-                    _multipleValues[question['question']] = newValue!;
-                    controller.text = newValue;
+                    _multipleValues[uniqueQuestionId] = value ?? "";
                   });
                 },
               );
             }).toList(),
-
         ],
       ),
     );
@@ -206,7 +206,7 @@ class _CreateFormState extends State<CreateForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Form for Template ID: ${widget.templateId}'),
+        title: Text('${_templateData?['templateName']}'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -219,6 +219,9 @@ class _CreateFormState extends State<CreateForm> {
                         ElevatedButton(
                           onPressed: () {
                             if (_formKey.currentState!.validate()) {
+                              showAlert(context, "Success",
+                                  "Success submit form!", AlertType.success);
+
                               _saveForm();
                             }
                           },
