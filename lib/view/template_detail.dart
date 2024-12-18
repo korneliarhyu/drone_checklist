@@ -1,11 +1,9 @@
 import 'dart:convert';
-import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:dio/dio.dart';
 import 'package:drone_checklist/database/database_helper.dart';
 import 'package:drone_checklist/helper/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/services/api_service.dart';
-
 
 class TemplateDetail extends StatefulWidget {
   final int templateId;
@@ -33,7 +31,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
 
   // Fungsi ini untuk memuat data template dari API berdasarkan ID.
   Future<void> _loadTemplateData(int templateId) async {
-    try{
+    try {
       final dio = Dio();
       final apiService = ApiService(dio);
 
@@ -52,7 +50,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
         _templateData = templateData;
         _isLoading = false;
       });
-    } catch(e){
+    } catch (e) {
       print("Error fetching template: $e");
       setState(() {
         _isLoading = false;
@@ -70,80 +68,76 @@ class _TemplateDetailState extends State<TemplateDetail> {
         return false;
       } else {
         String serializeForm = json.encode({
-          'assessment' : _templateData['assessment'],
-          'pre' : _templateData['pre'],
-          'post' : _templateData['post']
+          'assessment': _templateData['assessment'],
+          'pre': _templateData['pre'],
+          'post': _templateData['post']
         });
 
         // Jika data tidak kosong, mapping seluruh data dari state _templateData.
         // Key: String, Value: dynamic.
-        Map <String, dynamic> templateData = {
+        Map<String, dynamic> templateData = {
           // 'nama data dari model' : servis yang memiliki return dari API ['nama json'],
-          'serverTemplateId' : _templateData['id'],
-          'templateName' : _templateData['templateName'],
-          'formType' : 'assessment-pre-post',
-          'updatedDate' : DateTime.now().toString(),
-          'templateFormData' : serializeForm,
-          'deletedAt' : null,
+          'serverTemplateId': _templateData['id'],
+          'templateName': _templateData['templateName'],
+          'formType': 'assessment-pre-post',
+          'updatedDate': DateTime.now().toString(),
+          'templateFormData': serializeForm,
+          'deletedAt': null,
         };
 
         DatabaseHelper.insertTemplate(templateData);
-        return true;
+
+        //alert success
+        showAlert(
+            context, "Success", "Success download Template", AlertType.success);
       }
+
+      return true;
     } catch (e) {
       print("Error: $e");
+      // alert gagal
+      showAlert(
+          context, "Failed", "Failed download Template", AlertType.failed);
       return false;
     }
-
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_templateData['templateName'] != null ? _templateData['templateName']! : "Form"),
+        title: Text(_templateData['templateName'] != null
+            ? _templateData['templateName']!
+            : "Form"),
       ),
       body: _isLoading
-        ? const Center(child:CircularProgressIndicator())
-        : _templateData.isEmpty
-          ? const Center(child: Text('No template data available'))
-          : ListView(
-            children: [
-              if(_templateData['assessment'] != null && _templateData['pre'] != null && _templateData['post'] != null)
-                _buildSection('Assessment', _templateData),
-                _buildSection('Pre-Check', _templateData),
-                _buildSection('Post-Check', _templateData),
-
-            ],
-      ),
+          ? const Center(child: CircularProgressIndicator())
+          : _templateData.isEmpty
+              ? const Center(child: Text('No template data available'))
+              : ListView(
+                  children: [
+                    if (_templateData['assessment'] != null &&
+                        _templateData['pre'] != null &&
+                        _templateData['post'] != null)
+                      _buildSection('Assessment', _templateData),
+                    _buildSection('Pre-Check', _templateData),
+                    _buildSection('Post-Check', _templateData),
+                  ],
+                ),
       floatingActionButton: Stack(
         children: [
           Positioned(
             bottom: 16,
-            right: 16,  // Atur posisi di kanan bawah
+            right: 16, // Atur posisi di kanan bawah
             child: FloatingActionButton.extended(
               onPressed: () async {
-                // Tambahkan fungsi unduh data di sini
-                // _downloadTemplate(widget.templateId);
-                
-                // menggunakan flash-message(snackbar)
-                bool downloadSuccess = await _downloadTemplate(widget.templateId);
-
-                if (downloadSuccess) {
-                  showAwesomeSnackbar(context, "Success!", "Template downloaded successfully", ContentType.success);
-                } else {
-                  showAwesomeSnackbar(context, "Failed!!", "Template failed to download", ContentType.failure);
-                }
-
+                await _downloadTemplate(widget.templateId);
                 // Refresh page
                 Navigator.of(context).pop();
-                Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) =>
-                        TemplateDetail(templateId: widget.templateId)
-                    )
-                );
-
-                print('Download Data');
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) =>
+                      TemplateDetail(templateId: widget.templateId),
+                ));
               },
               icon: Icon(Icons.download),
               label: Text("Download Template"),
@@ -155,7 +149,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
     );
   }
 
-  Widget _buildSection(String title, Map<String, dynamic> section){
+  Widget _buildSection(String title, Map<String, dynamic> section) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -168,16 +162,13 @@ class _TemplateDetailState extends State<TemplateDetail> {
         ),
 
         //ini tadinya error
-        ...section.keys.take(1).expand((entry){
-
-          Map<String, dynamic> param = new Map<String, dynamic>();//temp
-          if(title=="Assessment"){
+        ...section.keys.take(1).expand((entry) {
+          Map<String, dynamic> param = new Map<String, dynamic>(); //temp
+          if (title == "Assessment") {
             param = _templateData['assessment'];
-          }
-          else if(title=="Pre-Check"){
+          } else if (title == "Pre-Check") {
             param = _templateData['pre'];
-          }
-          else if(title=="Post-Check"){
+          } else if (title == "Post-Check") {
             param = _templateData['post'];
           }
           // final questionKey = entry.key;
@@ -255,35 +246,32 @@ class _TemplateDetailState extends State<TemplateDetail> {
     );
   }
 
-  Widget _buildMultipleChoiceQuestion(Map<String, dynamic> question){
+  Widget _buildMultipleChoiceQuestion(Map<String, dynamic> question) {
     return ListTile(
       title: Text(question['question']),
       subtitle: Column(
-          children: question['option'].map<Widget>((option){
-            return RadioListTile<String>(
-              value: option.toString(),
-              groupValue: null,
-              onChanged: (value) {},
-              title: Text(option.toString()),
-            );
-          }).toList(),
+        children: question['option'].map<Widget>((option) {
+          return RadioListTile<String>(
+            value: option.toString(),
+            groupValue: null,
+            onChanged: (value) {},
+            title: Text(option.toString()),
+          );
+        }).toList(),
       ),
     );
   }
 
-  Widget _buildLongTextQuestion(Map<String, dynamic> question){
+  Widget _buildLongTextQuestion(Map<String, dynamic> question) {
     return ListTile(
       title: Text(question['question']),
       subtitle: Padding(
-        padding: const EdgeInsets.only(top: 8.0),
-        child: TextField(
-          maxLines: 4,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: "Enter your answer"
-          ),
-        )
-      ),
+          padding: const EdgeInsets.only(top: 8.0),
+          child: TextField(
+            maxLines: 4,
+            decoration: InputDecoration(
+                border: OutlineInputBorder(), hintText: "Enter your answer"),
+          )),
     );
   }
 }
