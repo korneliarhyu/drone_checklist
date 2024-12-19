@@ -1,4 +1,8 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:drone_checklist/database/database_helper.dart';
+import 'package:drone_checklist/services/api_service.dart';
 import 'package:drone_checklist/view/form_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/view/template_view.dart';
@@ -78,6 +82,51 @@ class _FormCreateState extends State<FormCreate> {
 
     //debug ambil id yang dipilih
     print("Syncing ID(s): $selectedForms");
+    
+    if(selectedForms.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No forms selected to sync!')),
+      );
+      return;
+    }
+    
+    try{
+      List<Map<String, dynamic>?> formToSync = await Future.wait(
+        selectedForms.map((formId) => DatabaseHelper.getFormById(formId)),
+      );
+
+      List<Map<String, dynamic>?> syncData = formToSync.map((form){
+        return {
+          "submissionName": form?['formName'],
+          "templateId": form?['templateId'],
+          "submittedBy": "User", //hardcode dulu ya
+          "submittedDate": DateTime.now().toIso8601String(),
+        "formData": form?['formData'],
+        };
+      }).toList();
+
+      //panggil apiapi
+      final dio = Dio();
+      final apiService = ApiService(dio);
+
+      List<Map<String, dynamic>> newSyncData = syncData.where((map) => map != null).cast<Map<String, dynamic>>().toList();
+
+      //sync process
+      for(var data in newSyncData){
+        print(const JsonEncoder.withIndent('  ').convert(data));
+        final response = await apiService.syncData(data);
+        print("Sync Succesful: $response");
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Syncing Succesful!')),
+      );
+    } catch (e){
+      print("Sync Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sync Error: $e'))
+      );
+    }
   }
 
   @override
@@ -114,7 +163,7 @@ class _FormCreateState extends State<FormCreate> {
         // ),
         Positioned(
           bottom: 16,
-          right: 209,
+          right: 145,
           child: FloatingActionButton(
             heroTag: "sync",
             onPressed: _sync,

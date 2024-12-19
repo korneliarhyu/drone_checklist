@@ -35,6 +35,24 @@ class _CreateFormState extends State<CreateForm> {
     _getTemplate(widget.templateId);
   }
 
+  Map<String, dynamic> convertSectionAnswers(String section, Map<String, dynamic> param){
+    Map<String, dynamic> rtn = new Map<String, dynamic>();
+    rtn['type'] = section;
+
+    List<Map<String, dynamic>> ansList = [];
+    Map<String, dynamic> ans = new Map<String, dynamic>();
+    param.forEach((questionName, questionAnswer){
+        ans['questionName'] = questionName;
+        ans['answer'] = questionAnswer;
+        ans['dataChanged'] = DateTime.now().toString();
+        ansList.add(ans);
+        ans = {};
+    });
+
+    rtn['answer'] = ansList;
+    return rtn;
+  }
+
   void _initializeCheckboxValues() {
     for (var section in ['assessment', 'pre', 'post']) {
       if (_formData[section] != null) {
@@ -89,6 +107,16 @@ class _CreateFormState extends State<CreateForm> {
       formData.addAll(_multipleValues);
       formData.addAll(_dropdownValues);
 
+      print(formData);
+
+      //klo dah kekumpul semua answer, pisah2kan berdasarkan sectionnya
+      //lalu masukkan ke convertSectionAnswers.
+      //Hasil dari convertSectionAnswers berupa map, masukkan saja
+      //ke list:
+      // List<Map<String, dynamic>> contohList = [];
+      // contohList.add(convertSectionAnswers(section, param));
+      //Nanti contohList yang akan dimasukkan ke db sebagai formData
+
       final formModel = FormModel(
         formId: null,
         templateId: widget.templateId,
@@ -119,7 +147,17 @@ class _CreateFormState extends State<CreateForm> {
 
     if (_formData != null) {
       ['assessment', 'pre', 'post'].forEach((section) {
+
         if (_formData[section] != null) {
+          fields.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                section.toUpperCase(), // Convert section name to uppercase for styling
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          );
           _formData[section].forEach((questionId, questionData) {
             TextEditingController controller = TextEditingController();
             _questionControllers[questionId] = controller;
@@ -158,9 +196,11 @@ class _CreateFormState extends State<CreateForm> {
                 title: Text(option),
                 value:  _checkboxValues[option] ?? false,
                 onChanged: (bool? value) {
-                  // perbarui dengan nilai baru
-                  print(option);
-                  _checkboxValues[option] = value ?? false;
+                  setState(() {
+                    // perbarui dengan nilai baru
+                    print(option);
+                    _checkboxValues[option] = value ?? false;
+                  });
                 },
               );
             }).toList(),

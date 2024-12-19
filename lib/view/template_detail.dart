@@ -167,7 +167,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
           ),
         ),
 
-        //ini tadinya error
+
         ...section.keys.take(1).expand((entry){
 
           Map<String, dynamic> param = new Map<String, dynamic>();//temp
