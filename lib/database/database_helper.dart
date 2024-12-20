@@ -22,6 +22,7 @@ class DatabaseHelper {
     //membuat table form
     await database.execute('''CREATE TABLE form (
       formId INTEGER PRIMARY KEY AUTOINCREMENT,
+      serverTemplateId INTEGER,
       templateId INTEGER,
       formName TEXT,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
