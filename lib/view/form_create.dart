@@ -78,6 +78,7 @@ class _CreateFormState extends State<CreateForm> {
     });
   }
 
+
   void _saveForm() async {
     List<Map<String, dynamic>> structuredData = [];
 
@@ -103,6 +104,7 @@ class _CreateFormState extends State<CreateForm> {
           _questionName["$section-$questionId"]; //ambil nama question
 
       var answerEntry = {
+        // flightNum
         "questionName": questionName,
         "answer": value,
         "dataChanged": DateTime.now().toString()
@@ -178,12 +180,12 @@ class _CreateFormState extends State<CreateForm> {
             TextFormField(
               controller: controller,
               decoration: InputDecoration(labelText: "Answer"),
-              validator: (value) {
-                if (question['required'] && (value == null || value.isEmpty)) {
-                  return 'This field cannot be empty';
-                }
-                return null;
-              },
+              // validator: (value) {
+              //   if (question['required'] && (value == null || value.isEmpty)) {
+              //     return 'This field cannot be empty';
+              //   }
+              //   return null;
+              // },
             ),
           if (question['type'] == 'checklist')
             ...question['option'].map<Widget>((option) {

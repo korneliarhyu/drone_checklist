@@ -34,8 +34,24 @@ class _FormDetailState extends State<FormDetail> {
     _loadFormData(widget.formId);
   }
 
-  void _saveForm() {
+  void _saveForm(formData, isChecked) {
     // Handle form saving logic here
+
+    // loop data untuk mengecek 1-1 typenya mana yang dichecklist atau engga(untuk ngecek type yang mana yang isChecked).
+    // iterasi -> looping -> ngebaca datanya 1-1. dan akan kembali ke atas sampai seluruh data terbaca.
+    //loop ini akan mengecek satu-satu mulai dari pre, jika pre isChecked, maka akan masuk ke dalam if.
+    for () {
+      if (isChecked == true {
+      // logic update tambah flightNum
+      
+      } else {
+      // update biasa
+
+      }
+    }
+
+
+
     print("Form saved!");
   }
 
