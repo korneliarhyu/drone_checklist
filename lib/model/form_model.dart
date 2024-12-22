@@ -3,7 +3,7 @@ class FormModel {
   final int templateId;
   final String formName;
   final DateTime updatedDate;
-  final Map<String, dynamic> formData;
+  final List<Map<String, dynamic>> formData;
   final DateTime? deletedAt;
 
   FormModel({
@@ -34,7 +34,7 @@ class FormModel {
       templateId: json['templateId'],
       formName: json['formName'],
       updatedDate: DateTime.parse(json['updatedDate']),
-      formData: Map<String, dynamic>.from(json['formData']),
+      formData: List<Map<String, dynamic>>.from(json['formData']),
       deletedAt: DateTime.parse(json['deletedAt']),
     );
   }

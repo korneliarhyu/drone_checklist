@@ -22,6 +22,7 @@ class DatabaseHelper {
     //membuat table form
     await database.execute('''CREATE TABLE form (
       formId INTEGER PRIMARY KEY AUTOINCREMENT,
+      serverTemplateId INTEGER,
       templateId INTEGER,
       formName TEXT,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -118,7 +119,51 @@ class DatabaseHelper {
 
   static Future<List<Map<String, dynamic>>> getAllChecklist() async {
     final db = await DatabaseHelper.db();
+
     return db.query("form", orderBy: "formId");
+
+
+    // template dummy hanya dapat diinsert 1-1.
+    // template 1
+    var templateJson = jsonEncode({
+      "questions": {
+        "question1": {
+          "question": "Is the drone's firmware updated?",
+          "type": "dropdown",
+          "options": ["Yes", "No", "Not Applicable"],
+          "required": true
+        },
+        "question2": {
+          "question": "Inspect propellers for damage",
+          "type": "multiple",
+          "options": [
+            "No damage",
+            "Minor damage",
+            "Major damage",
+            "Needs replacement"
+          ],
+          "required": true
+        },
+        "question3": {
+          "question": "Battery charge level",
+          "type": "text",
+          "options": [],
+          "required": true
+        }
+      }
+    });
+
+    final template = {
+      'templateId': 2,
+      'templateName': 'Drone Checklist',
+      'formType': 'Pre-Flight',
+      'updatedDate': '2024-11-24',
+      'templateFormData': templateJson,
+      'deletedAt': null
+    };
+
+    //return await db.insert('dummy_template', template);
+
   }
 
   static Future<List<Map<String, dynamic>>> getAllTemplates() async {

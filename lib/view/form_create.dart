@@ -23,11 +23,12 @@ class _CreateFormState extends State<CreateForm> {
   final Map<String, String> _dropdownValues = {};
   final Map<String, String> _multipleValues = {};
   final Map<String, String> _textboxValues = {};
-  final Map<String, bool> _checkboxValues = {};
+  final Map<String, Set<String>> _checkboxValues = {};
 
   // Membuat dua variable kosong bertype Map _templateData dan _formData untuk menghindari error non-nullable.
-  Map<String, dynamic> _templateData = {};
+  Map<String, dynamic>? _templateData = {};
   Map<String, dynamic> _formData = {};
+  Map<String, String> _questionName = {};
   bool _isLoading = true;
 
   @override
@@ -36,31 +37,14 @@ class _CreateFormState extends State<CreateForm> {
     _getTemplate(widget.templateId);
   }
 
-  void _initializeCheckboxValues() {
-    for (var section in ['assessment', 'pre', 'post']) {
-      if (_formData[section] != null) {
-        _formData[section].forEach((questionId, questionData) {
-          if (questionData['type'] == 'checklist') {
-            questionData['option'].forEach((option) {
-              if (!_checkboxValues.containsKey(option)) {
-                _checkboxValues[option] =
-                    false; // Pastikan menginisialisasi hanya jika belum ada
-              }
-            });
-          }
-        });
-      }
-    }
-  }
-
   Future<void> _getTemplate(int templateId) async {
-    _initializeCheckboxValues();
     try {
       final response = await DatabaseHelper.getTemplateById(templateId);
 
       // Decode: convert dari String ke JSON
       final Map<String, dynamic> data =
           jsonDecode(response['templateFormData']);
+      _initFormData(data);
 
       print("Fetched Template: $response");
       print("Fetched Form: $data");
@@ -80,32 +64,78 @@ class _CreateFormState extends State<CreateForm> {
     }
   }
 
-  void _saveForm() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      Map<String, dynamic> formData = {};
-
-      _questionControllers.forEach((key, controller) {
-        formData[key] = controller.text;
-      });
-
-      formData.addAll(_textboxValues);
-      formData.addAll(_multipleValues);
-      formData.addAll(_dropdownValues);
-
-      final formModel = FormModel(
-        formId: null,
-        templateId: widget.templateId,
-        formName: _templateData['templateName'],
-        updatedDate: DateTime.now(),
-        formData: _templateData,
-      );
-
-      try {
-        DatabaseHelper.createForm(formModel);
-      } catch (e) {
-        print("Error save: $e");
+  void _initFormData(Map<String, dynamic> data) {
+    ['assessment', 'pre', 'post'].forEach((section) {
+      if (data[section] != null) {
+        data[section].forEach((questionId, questionData) {
+          String uniqueQuestionId = '$section-$questionId';
+          if (!_questionControllers.containsKey(uniqueQuestionId)) {
+            _questionControllers[uniqueQuestionId] = TextEditingController();
+          }
+          _questionName[uniqueQuestionId] = questionData['question'];
+        });
       }
+    });
+  }
+
+  void _saveForm() async {
+    List<Map<String, dynamic>> structuredData = [];
+
+    Map<String, List<Map<String, dynamic>>> sectionData = {};
+    Map<String, dynamic> allAnswers = {
+      ..._textboxValues,
+      ..._multipleValues,
+      ..._dropdownValues,
+      ..._checkboxValues
+          .map((key, value) => MapEntry(key, jsonEncode(value.toList()))),
+    }; // Mapping seluruh jawaban di satu value untuk mempermudah ambil data.
+
+    // indexing seluruh jawaban dan pertanyaan buat struktur si json
+    allAnswers.forEach((key, value) {
+      var parts = key.split('-');
+      var section = parts[0];
+      var questionId = parts[1];
+
+      //safety check untuk cek initialisasi
+      sectionData.putIfAbsent(section, () => []);
+
+      String? questionName =
+          _questionName["$section-$questionId"]; //ambil nama question
+
+      var answerEntry = {
+        "questionName": questionName,
+        "answer": value,
+        "dataChanged": DateTime.now().toString()
+      };
+      sectionData[section]?.add(answerEntry);
+    });
+
+    sectionData.forEach((section, answer) {
+      structuredData.add({
+        "type": section, // ambil tipe question
+        "answer":
+            answer // ambil jawaban dari setiap pertanyaan untuk disimpan di tipe JSON
+      });
+    });
+
+    final formModel = FormModel(
+      formId: null,
+      templateId: widget.templateId,
+      formName: _templateData?['templateName'],
+      updatedDate: DateTime.now(),
+      formData: structuredData,
+    );
+
+    try {
+      await DatabaseHelper.createForm(formModel);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => FormCreate()),
+      );
+    } catch (e) {
+      print("Error save: $e");
     }
+    print(jsonEncode(formModel.formData));
   }
 
   List<Widget> _buildFormFields() {
@@ -123,11 +153,12 @@ class _CreateFormState extends State<CreateForm> {
           _formData[section].forEach((questionId, questionData) {
             // memberikan unique Key ke masing-masing question di setiap section
             // section = assessment, pre, post.
-            String uniqueQuestionId = '$section-$questionData';
+            String uniqueQuestionId = '$section-$questionId';
             TextEditingController controller = TextEditingController();
-            _questionControllers[questionId] = controller;
-            fields.add(_buildQuestionField(
-                uniqueQuestionId, questionData, controller));
+            if (controller != null) {
+              fields.add(_buildQuestionField(
+                  uniqueQuestionId, questionData, controller));
+            }
           });
         }
       });
@@ -156,14 +187,22 @@ class _CreateFormState extends State<CreateForm> {
             ),
           if (question['type'] == 'checklist')
             ...question['option'].map<Widget>((option) {
-              String checkboxKey = "$uniqueQuestionId-$option";
               return CheckboxListTile(
                 title: Text(option),
-                value: _checkboxValues[checkboxKey] ?? false,
-                onChanged: (bool? value) {
+                value: _checkboxValues[uniqueQuestionId]?.contains(option) ??
+                    false,
+                onChanged: (bool? isSelected) {
                   setState(() {
                     // perbarui dengan nilai baru
-                    _checkboxValues[checkboxKey] = value ?? false;
+                    if (isSelected ?? false) {
+                      if (!_checkboxValues.containsKey(uniqueQuestionId)) {
+                        _checkboxValues[uniqueQuestionId] = {option};
+                      } else {
+                        _checkboxValues[uniqueQuestionId]?.add(option);
+                      }
+                    } else {
+                      _checkboxValues[uniqueQuestionId]?.remove(option);
+                    }
                   });
                 },
               );

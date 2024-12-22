@@ -31,11 +31,6 @@ class TemplateView extends StatelessWidget {
     }
   }
 
-  // masih pakai database
-  // Future<List<Map<String, dynamic>>> _fetchTemplates() async {
-  //   return await DatabaseHelper.getAllDummyTemplates();
-  // }
-
   @override
   Widget build(BuildContext context) {
     const String appTitle = 'Template List';
