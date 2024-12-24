@@ -172,7 +172,9 @@ class _CreateFormState extends State<CreateForm> {
             // memberikan unique Key ke masing-masing question di setiap section
             // section = assessment, pre, post.
             String uniqueQuestionId = '$section-$questionId';
-            TextEditingController controller = TextEditingController();
+
+            // Text Editing Controller ini bikin nilai text ngga hilang saat click field lainnya.
+            TextEditingController? controller = _questionControllers[uniqueQuestionId];
             if (controller != null) {
               fields.add(_buildQuestionField(
                   uniqueQuestionId, questionData, controller));
@@ -202,6 +204,12 @@ class _CreateFormState extends State<CreateForm> {
                 }
                 return null;
               },
+              onChanged: (value) {
+                setState(() {
+                  _textboxValues[uniqueQuestionId] = value;
+                });
+              },
+
             ),
           if (question['type'] == 'checklist')
             ...question['option'].map<Widget>((option) {
