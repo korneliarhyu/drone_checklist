@@ -76,12 +76,12 @@ class DatabaseHelper {
   }
 
   static Future<int> updateForm(
-      int formId, String formName, String formData) async {
+      int formId, String formData) async {
     final db = await DatabaseHelper.db();
 
     final form = {
       // 'formId' : formId,
-      'formName': formName,
+      // 'formName': formName,
       'formData': formData
     };
 

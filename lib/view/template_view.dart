@@ -44,12 +44,8 @@ class TemplateView extends StatelessWidget {
             icon: const Icon(Icons.arrow_back),
           ),
         ),
-        //Menggunakan database gunakan List<Map<String, dynamic>>
-        //body: FutureBuilder<List<Map<String, dynamic>>>
-
-            //Menggunakan API gunakan List<Template>
-            body: FutureBuilder<List<Template>>
-            (
+        //Menggunakan API gunakan List<Template>
+        body: FutureBuilder<List<Template>>(
           future: _getAllTemplate(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -70,18 +66,17 @@ class TemplateView extends StatelessWidget {
                       // menggunakan Database
                       //title: Text(template['templateName'],
 
-                          // menggunakan API
-                          title: Text(template.templateName,
+                      // menggunakan API
+                      title: Text(template.templateName,
                           style: const TextStyle(fontSize: 20)),
                       onTap: () {
-                            // onTap hanya bisa menggunakan database / belum ada API nya
+                        // onTap hanya bisa menggunakan database / belum ada API nya
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) =>
-                                    TemplateDetail(
-                                        templateId: template.id,
-                                        //templateData: template.templateData
+                                builder: (context) => TemplateDetail(
+                                      templateId: template.id,
+                                      //templateData: template.templateData
                                     )));
                         // Handle navigation or further actions
                       },

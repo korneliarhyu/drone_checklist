@@ -65,17 +65,11 @@ class _FormDetailState extends State<FormDetail> {
       String encodeForm = jsonEncode(formData);
       DatabaseHelper.updateForm(
           widget.formId,
-          encodeForm
+          encodeForm,
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Form saved succesfully!')),
-      );
-    } catch (e){
+    } catch (e, stackTrace) {
       print("Error saving form: $e");
-      ScaffoldMessenger.of((context).showSnackBar(
-        SnackBar(content: (content: Text('Error saving form: $e')),
-        );
-      ))
+      print("StackTrace: $stackTrace");
     }
 
 
