@@ -84,7 +84,7 @@ class _SelectFormState extends State<SelectForm> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => CreateForm(
-                            templateId: chosenTemp['templateId'],
+                            templateId: chosenTemp['templateId'], serverTemplateId: chosenTemp['serverTemplateId'],
                           ),
                         ),
                       ),

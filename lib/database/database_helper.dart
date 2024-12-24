@@ -61,6 +61,7 @@ class DatabaseHelper {
 
     final form = {
       'templateId': model.templateId,
+      'serverTemplateId': model.serverTemplateId,
       'formName': model.formName,
       'formData': jsonEncode(model.formData),
       'deletedAt': null
