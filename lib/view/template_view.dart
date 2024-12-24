@@ -33,15 +33,13 @@ class TemplateView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const String appTitle = 'Template List';
-    return MaterialApp(
-      title: appTitle,
-      home: Scaffold(
+    const String appTitle = 'List Template';
+    return Scaffold(
         appBar: AppBar(
           title: const Text(appTitle),
           leading: IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back_rounded),
           ),
         ),
         //Menggunakan API gunakan List<Template>
@@ -63,20 +61,16 @@ class TemplateView extends StatelessWidget {
                   return Card(
                     margin: const EdgeInsets.all(15),
                     child: ListTile(
-                      // menggunakan Database
-                      //title: Text(template['templateName'],
+                      leading: const Icon(Icons.description, color: Colors.blue),
 
-                      // menggunakan API
                       title: Text(template.templateName,
                           style: const TextStyle(fontSize: 20)),
                       onTap: () {
-                        // onTap hanya bisa menggunakan database / belum ada API nya
                         Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (context) => TemplateDetail(
                                       templateId: template.id,
-                                      //templateData: template.templateData
                                     )));
                         // Handle navigation or further actions
                       },
@@ -89,7 +83,6 @@ class TemplateView extends StatelessWidget {
             }
           },
         ),
-      ),
     );
   }
 }

@@ -149,6 +149,9 @@ class _FormDetailState extends State<FormDetail> {
   List<Widget> _buildFormFields() {
     List<Widget> fields = [];
     if (_formData != null) {
+      // define order sections
+      List<String> sectionOrder = ['assessment', 'pre', 'post'];
+
       for (var section in _formData!) {
         fields.add(Text(
           section['type'].toString().toUpperCase(),

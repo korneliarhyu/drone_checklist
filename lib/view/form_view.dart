@@ -7,10 +7,6 @@ import 'package:drone_checklist/view/template_select.dart';
 int currTemplate = 1;
 
 class FormCreate extends StatefulWidget {
-  //parameter yang di main itu di set disini
-  // const ChecklistFormView({
-  //   super.key, required this.templateQuestions
-  // });
 
   @override
   _FormCreateState createState() => _FormCreateState();
@@ -29,8 +25,6 @@ class _FormCreateState extends State<FormCreate> {
         'isChecked': false,
       };
     }).toList();
-    //debug fetching data from database
-    //print("Fetched data: $_formList");
 
     setState(() {});
   }
@@ -49,9 +43,6 @@ class _FormCreateState extends State<FormCreate> {
       context,
       MaterialPageRoute(
         builder: (context) => SelectForm(),
-        // CreateForm(
-        //     //templateQuestions: widget.templateQuestions,
-        //     templateId: currTemplate),
       ),
     );
     _callData();
@@ -79,7 +70,7 @@ class _FormCreateState extends State<FormCreate> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Checklist Form View')),
+      appBar: AppBar(title: const Text('List Form')),
       floatingActionButton: Stack(children: [
         Positioned(
           bottom: 16,

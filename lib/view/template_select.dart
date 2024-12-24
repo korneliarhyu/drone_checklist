@@ -34,15 +34,13 @@ class _SelectFormState extends State<SelectForm> {
 
   @override
   Widget build(BuildContext context) {
-    const String appTitle = 'Select a Template';
-    return MaterialApp(
-      title: appTitle,
-      home: Scaffold(
+    const String appTitle = 'Select downloaded template';
+    return Scaffold(
         appBar: AppBar(
           title: const Text(appTitle),
           leading: IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back_rounded),
           ),
         ),
         body: FutureBuilder<List<Map<String, dynamic>>>(
@@ -76,7 +74,7 @@ class _SelectFormState extends State<SelectForm> {
                               icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () => _deleteTemplate(chosenTemp['templateId']),
                           ),
-                          const Icon(Icons.arrow_forward_ios, color: Colors.grey),
+                          const Icon(Icons.arrow_forward_rounded, color: Colors.grey),
                         ],
                       ),
                        // Trailing icon
@@ -95,7 +93,6 @@ class _SelectFormState extends State<SelectForm> {
             }
           },
         ),
-      ),
     );
   }
 }

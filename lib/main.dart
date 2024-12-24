@@ -10,12 +10,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        textTheme: GoogleFonts.robotoTextTheme(
-          Theme.of(context).textTheme,
-        ),
-      ),
+      theme: _buildLightTheme(),
       home: FormCreate(),
+    );
+  }
+
+  ThemeData _buildLightTheme() {
+    var baseTheme = ThemeData.light();
+    return baseTheme.copyWith(
+      textTheme: GoogleFonts.latoTextTheme(baseTheme.textTheme),
     );
   }
 }
