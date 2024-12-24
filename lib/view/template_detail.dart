@@ -1,11 +1,16 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:drone_checklist/database/database_helper.dart';
+import 'package:drone_checklist/services/api_service.dart';
 import 'package:flutter/material.dart';
 
 class TemplateDetail extends StatefulWidget {
-  final int dummyTemplateId;
+  final int templateId;
 
-  const TemplateDetail({Key? key, required this.dummyTemplateId}) : super(key: key);
+  const TemplateDetail({
+    Key? key,
+    required this.templateId
+  }) : super(key: key);
 
   @override
   _TemplateDetailState createState() => _TemplateDetailState();
@@ -13,38 +18,65 @@ class TemplateDetail extends StatefulWidget {
 
 class _TemplateDetailState extends State<TemplateDetail> {
   // menggunakan late supaya program menunggu sampai database benar-benar siap untuk fetch template form.
-  late Map<String, dynamic> _templateData;
+  late Map<String, dynamic> _templateData = {};
+  late bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     // memanggil sesuai templateId yang diclick
-    _loadTemplateData(widget.dummyTemplateId);
+    _loadTemplateData(widget.templateId);
   }
 
   // Fungsi ini untuk memuat data template dari database berdasarkan ID.
   Future<void> _loadTemplateData(int templateId) async {
-    var templateData = await DatabaseHelper.getDummyTemplateById(templateId);
-    if (templateData != null) {
+    try{
+      final dio = Dio();
+      final apiService = ApiService(dio);
+
+      // API untuk mendapatkan detail template adalah downloadTemplate(templateId);
+      final response = await apiService.downloadTemplate(templateId);
+
+      // response API diconvert ke dalam codingan menggunakan jsonDecode.
+      final Map<String, dynamic> templateData = jsonDecode(response);
+
+      //debug
+      print("Fetched template: $templateData");
+      // _templateData = templateData;
+
       setState(() {
-        _templateData = jsonDecode(templateData['templateFormData']);
+        //menampung return API ke state _templateData;
+        _templateData = templateData;
+        _isLoading = false;
       });
-    } else {
-      print("Template not found");
+    } catch (e){
+      print("Error fetching template: $e");
+      setState(() {
+        _isLoading = false;
+        _templateData = {};
+      });
     }
   }
 
   Future<bool> _downloadTemplate(int templateId) async {
     try{
-      var dummyTemplate = await DatabaseHelper.getDummyTemplateById(templateId);
-      if (dummyTemplate == null) {
+      await _loadTemplateData(templateId);
+
+      if (_templateData.isEmpty) {
+        print("Template data is empty or missing");
         return false;
       } else {
+        String serializeForm = json.encode({
+          'assesment': _templateData['assessment'],
+          'pre': _templateData['pre'],
+          'post': _templateData['post']
+        });
+
         Map<String, dynamic> templateData = {
-          'templateName': dummyTemplate['templateName'],
-          'formType': dummyTemplate['formType'],
+          'templateName': _templateData['templateName'],
+          'formType': _templateData['formType'],
           'updatedDate': DateTime.now().toString(),
-          'templateFormData': dummyTemplate['templateFormData'],
+          'templateFormData': _templateData['templateFormData'],
           'deletedAt': null
         };
         DatabaseHelper.insertTemplate(templateData);
@@ -82,7 +114,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
             child: FloatingActionButton.extended(
               onPressed: () {
                 // Tambahkan fungsi unduh data di sini
-                _downloadTemplate(widget.dummyTemplateId);
+                _downloadTemplate(widget.templateId);
                 print('Download Data');
               },
               icon: Icon(Icons.download),
@@ -156,80 +188,3 @@ class _TemplateDetailState extends State<TemplateDetail> {
     );
   }
 }
-
-
-// old code
-
-// void _loadTemplateData() {
-//   //masih static, belum fetch dari database
-//   String fetchedData = '''
-//     {"templateId":1,"title":"Drone Pre-Flight Checklist",
-//     "questions":{
-//     "question1":{"question":"Is the drone's firmware updated?","type":"dropdown","options":["Yes","No","Not Applicable"],"required":true},"question2":{"question":"Inspect propellers for damage","type":"multiple","options":["No damage","Minor damage","Major damage","Needs replacement"],"required":true},"question3":{"question":"Battery charge level","type":"text","options":[],"required":true}}}
-//   ''';
-//   setState(() {
-//     //membaca data dari json ke UI menggunakan jsonDecode, kebalikan dari jsonEncode
-//     _templateData = jsonDecode(fetchedData);
-//   });
-// }
-
-
-
-// class _TemplateDetailState extends State<TemplateDetail> {
-//   Map<String, dynamic>? _templateData;
-//
-//   void _loadTemplateData() async {
-//     var templateData = await DatabaseHelper.getTemplateById(widget.templateId);
-//     setState(() {
-//       _templateData = templateData;
-//     });
-//   }
-//
-//   void _downloadTemplates() async {}
-//
-//   @override
-//   void initState() {
-//     // TODO: implement initState
-//     super.initState();
-//     _loadTemplateData();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: Text("Template Detail")),
-//       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-//       floatingActionButton: Padding(
-//         padding: const EdgeInsets.only(
-//             bottom: 16.0), // Adjust bottom padding as needed
-//         child: FloatingActionButton.extended(
-//           onPressed: _downloadTemplates,
-//           icon: const Icon(Icons.download_rounded),
-//           label: const Text("Download Template"),
-//         ),
-//       ),
-//       body: _templateData == null
-//           ? const Center(
-//               child: Text(
-//                 "No Template Available Yet :(",
-//                 style: TextStyle(fontSize: 18),
-//               ),
-//             )
-//           : ListView(
-//               children: [
-//                 ListTile(
-//                   title: Text(_templateData!['templateName'],
-//                       style: TextStyle(fontSize: 18)),
-//                   subtitle:
-//                       Text("Template ID: ${_templateData!['templateId']}"),
-//                 ),
-//                 Divider(),
-//                 ListTile(
-//                   title: Text("Form Data:"),
-//                   subtitle: Text(_templateData!['templateFormData']),
-//                 )
-//               ],
-//             ),
-//     );
-//   }
-// }

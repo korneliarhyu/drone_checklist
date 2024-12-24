@@ -40,19 +40,47 @@ class _FormDetailState extends State<FormDetail> {
     // loop data untuk mengecek 1-1 typenya mana yang dichecklist atau engga(untuk ngecek type yang mana yang isChecked).
     // iterasi -> looping -> ngebaca datanya 1-1. dan akan kembali ke atas sampai seluruh data terbaca.
     //loop ini akan mengecek satu-satu mulai dari pre, jika pre isChecked, maka akan masuk ke dalam if.
-    // for () {
-    //   if (isChecked == true {
-    //   // logic update tambah flightNum
-    //
-    //   } else {
-    //   // update biasa
-    //
-    //   }
-    // }
+    for (var section in ['assessment', 'pre', 'post']) {
+      if (formData[section] != null) {
+        formData[section].forEach((questionId, questionData){
+          if(questionData['type'] == 'checklist' && isChecked){
+            print("Question '$questionId' is checked: Updating flightNum");
+            questionData['flightNum'] = ''; //cara set flightNum biar increment?
+          } else{
+            print("Updating question '$questionId'");
+          }
+
+          if(_questionControllers.containsKey(questionId)){
+            questionData['answer'] = _questionControllers[questionId]?.text;
+          }
+        });
+
+      } else {
+      // update biasa
+
+      }
+    }
+
+    try{
+      String encodeForm = jsonEncode(formData);
+      DatabaseHelper.updateForm(
+          widget.formId,
+          encodeForm
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Form saved succesfully!')),
+      );
+    } catch (e){
+      print("Error saving form: $e");
+      ScaffoldMessenger.of((context).showSnackBar(
+        SnackBar(content: (content: Text('Error saving form: $e')),
+        );
+      ))
+    }
 
 
 
-    print("Form saved!");
+    print("Form saved! $formData");
   }
 
   Future<void> _loadFormData(int formId) async {
@@ -107,7 +135,9 @@ class _FormDetailState extends State<FormDetail> {
                           ..._buildFormFields(),
                           const SizedBox(height: 20),
                           ElevatedButton(
-                            onPressed: _saveForm,
+                            onPressed: (){
+                              _saveForm(_formData, false);
+                            },
                             child: const Text('Save Changes'),
                           ),
                         ],

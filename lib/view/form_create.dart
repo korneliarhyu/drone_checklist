@@ -87,7 +87,7 @@ class _CreateFormState extends State<CreateForm> {
       ..._multipleValues,
       ..._dropdownValues,
       ..._checkboxValues
-          .map((key, value) => MapEntry(key, jsonEncode(value.toList()))),
+          .map((key, value) => MapEntry(key, value.join(', '))),
     }; // Mapping seluruh jawaban di satu value untuk mempermudah ambil data.
 
     // indexing seluruh jawaban dan pertanyaan buat struktur si json
@@ -105,18 +105,35 @@ class _CreateFormState extends State<CreateForm> {
       var answerEntry = {
         "questionName": questionName,
         "answer": value,
-        "dataChanged": DateTime.now().toString()
+        "dataChanged": DateTime.now().toString().split('.').first.replaceAll('-', '/')
       };
       sectionData[section]?.add(answerEntry);
     });
 
-    sectionData.forEach((section, answer) {
-      structuredData.add({
-        "type": section, // ambil tipe question
-        "answer":
-            answer // ambil jawaban dari setiap pertanyaan untuk disimpan di tipe JSON
-      });
+      ['pre', 'post'].forEach((section) {
+        if (sectionData.containsKey(section)){
+          Map<int, List<Map<String, dynamic>>> flightData = {};
+          sectionData[section]?.forEach((entry){
+            int flightNum = 1;
+            flightData.putIfAbsent(flightNum, () => []).add(entry);
+          });
+
+          structuredData.add({
+            "type": section, // ambil tipe question
+            "answer": flightData.entries.map((e) =>{
+              "flightNum": e.key,
+              "data": e.value
+            }).toList()// ambil jawaban dari setiap pertanyaan untuk disimpan di tipe JSON
+          });
+        }
     });
+
+    if(sectionData.containsKey('assesment')){
+      structuredData.add({
+        "type": "assesment",
+        "answer": sectionData['assessment']
+      });
+    }
 
     final formModel = FormModel(
       formId: null,
@@ -128,12 +145,13 @@ class _CreateFormState extends State<CreateForm> {
 
     try {
       await DatabaseHelper.createForm(formModel);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form Saved!')));
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => FormCreate()),
       );
     } catch (e) {
-      print("Error save: $e");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error saving form: $e')));
     }
     print(jsonEncode(formModel.formData));
   }

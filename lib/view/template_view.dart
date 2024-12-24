@@ -9,7 +9,7 @@ class TemplateView extends StatelessWidget {
   const TemplateView({super.key});
 
   // pakai API
-  Future<List<Template>> _fetchTemplates() async {
+  Future<List<Template>> _getAllTemplate() async {
     try {
       final dio = Dio();
       final client = ApiService(dio);
@@ -50,7 +50,7 @@ class TemplateView extends StatelessWidget {
             //Menggunakan API gunakan List<Template>
             body: FutureBuilder<List<Template>>
             (
-          future: _fetchTemplates(),
+          future: _getAllTemplate(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
