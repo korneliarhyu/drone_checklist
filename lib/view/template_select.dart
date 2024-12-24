@@ -16,10 +16,10 @@ class _SelectFormState extends State<SelectForm> {
   @override
   void initState() {
     super.initState();
-    _templatesFuture = _fetchTemplates();
+    _templatesFuture = _getAllTemplates();
   }
 
-  Future<List<Map<String, dynamic>>> _fetchTemplates() async {
+  Future<List<Map<String, dynamic>>> _getAllTemplates() async {
     return await DatabaseHelper.getAllTemplates();
   }
 
@@ -28,7 +28,7 @@ class _SelectFormState extends State<SelectForm> {
 
     //refresh list
     setState(() {
-      _templatesFuture = _fetchTemplates();
+      _templatesFuture = _getAllTemplates();
     });
   }
 
