@@ -1,6 +1,7 @@
 class FormModel {
   final int? formId;
   final int templateId;
+  final int serverTemplateId;
   final String formName;
   final DateTime updatedDate;
   final List<Map<String, dynamic>> formData;
@@ -9,6 +10,7 @@ class FormModel {
   FormModel({
     required this.formId,
     required this.templateId,
+    required this.serverTemplateId,
     required this.formName,
     required this.updatedDate,
     required this.formData,
@@ -20,6 +22,7 @@ class FormModel {
     return {
       'formId': formId,
       'templateId': templateId,
+      'serverTemplateId': serverTemplateId,
       'formName': formName,
       'updatedDate': updatedDate.toIso8601String(),
       'formData': formData,
@@ -32,6 +35,7 @@ class FormModel {
     return FormModel(
       formId: json['formId'],
       templateId: json['templateId'],
+      serverTemplateId: json['serverTemplateId'],
       formName: json['formName'],
       updatedDate: DateTime.parse(json['updatedDate']),
       formData: List<Map<String, dynamic>>.from(json['formData']),
