@@ -111,64 +111,64 @@ class _FormCreateState extends State<FormCreate> {
       ]),
       body: _formList.isEmpty
           ? const Center(
-              child: Text(
-                "No Form Available Yet :(",
-                style: TextStyle(fontSize: 18),
-              ),
-            )
+        child: Text(
+          "No Form Available Yet :(",
+          style: TextStyle(fontSize: 18),
+        ),
+      )
           : ListView.builder(
-              itemCount: _formList.length,
-              itemBuilder: (context, index) => Card(
-                margin: const EdgeInsets.all(15),
-                child: ListTile(
-                  leading:const Icon(Icons.description, color: Colors.blue),
-                  title: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: Text(
-                      _formList[index]['formName'],
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FormDetail(
-                        formId: _formList[index]
-                            ['formId'], // Pass the selected form ID
-                      ),
-                    ),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        onPressed: () async {
-                          int formId = _formList[index]['formId'];
-                          await DatabaseHelper.deleteForm(formId);
-                          setState(() {
-                            _formList.removeAt(index);
-                          });
-                        },
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.redAccent,
-                        ),
-                      ),
-                      Checkbox(
-                        value: _formList[index]['isChecked'] ?? false,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _formList[index]['isChecked'] = value ?? false;
-                          });
-                          //debug changestate
-                          // print('Checkbox formId: ${_formList[index]['formId']} set to $value');
-                        },
-                      ),
-                    ],
-                  ),
+        itemCount: _formList.length,
+        itemBuilder: (context, index) => Card(
+          margin: const EdgeInsets.all(15),
+          child: ListTile(
+            leading:const Icon(Icons.description, color: Colors.blue),
+            title: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Text(
+                _formList[index]['formName'],
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FormDetail(
+                  formId: _formList[index]
+                  ['formId'], // Pass the selected form ID
                 ),
               ),
             ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: () async {
+                    int formId = _formList[index]['formId'];
+                    await DatabaseHelper.deleteForm(formId);
+                    setState(() {
+                      _formList.removeAt(index);
+                    });
+                  },
+                  icon: const Icon(
+                    Icons.delete,
+                    color: Colors.redAccent,
+                  ),
+                ),
+                Checkbox(
+                  value: _formList[index]['isChecked'] ?? false,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      _formList[index]['isChecked'] = value ?? false;
+                    });
+                    //debug changestate
+                    // print('Checkbox formId: ${_formList[index]['formId']} set to $value');
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
