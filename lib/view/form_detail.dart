@@ -15,7 +15,7 @@ class _FormDetailState extends State<FormDetail> {
   Map<String, TextEditingController> _questionControllers = {};
   Map<String, List<String>> _selectedOptions = {};
 
-  Map<String, dynamic>? _formData;
+  List<Map<String, dynamic>>? _formData;
   String? _formName;
   bool _isLoading = true;
 
@@ -56,7 +56,7 @@ class _FormDetailState extends State<FormDetail> {
         });
 
       } else {
-      // update biasa
+        // update biasa
 
       }
     }
@@ -64,8 +64,8 @@ class _FormDetailState extends State<FormDetail> {
     try{
       String encodeForm = jsonEncode(formData);
       DatabaseHelper.updateForm(
-          widget.formId,
-          encodeForm,
+        widget.formId,
+        encodeForm,
       );
     } catch (e, stackTrace) {
       print("Error saving form: $e");
@@ -88,8 +88,11 @@ class _FormDetailState extends State<FormDetail> {
 
       print("Form data retrieved: $form");
 
-      var formData =
-          form['formData'] != null ? jsonDecode(form['formData']) : {};
+      // Decode the formData and ensure it's properly cast as List<Map<String, dynamic>>
+      List<Map<String, dynamic>>? formData = form['formData'] != null
+          ? List<Map<String, dynamic>>.from(jsonDecode(form['formData']))
+          : [];
+
       print("Decoded form data: $formData");
       setState(() {
         _formName = form['formName'];
@@ -102,6 +105,7 @@ class _FormDetailState extends State<FormDetail> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,105 +115,85 @@ class _FormDetailState extends State<FormDetail> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _formData == null
-              ? const Center(child: Text('No form data available'))
-              : Builder(
-                  builder: (context) {
-                    return Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: ListView(
-                        children: [
-                          Text(
-                            _formName ?? 'Untitled Form',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          ..._buildFormFields(),
-                          const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: (){
-                              _saveForm(_formData, false);
-                            },
-                            child: const Text('Save Changes'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+          ? const Center(child: Text('No form data available'))
+          : Builder(
+        builder: (context) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ListView(
+              children: [
+                Text(
+                  _formName ?? 'Untitled Form',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+                const SizedBox(height: 20),
+                ..._buildFormFields(),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: (){
+                    _saveForm(_formData, false);
+                  },
+                  child: const Text('Save Changes'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
   List<Widget> _buildFormFields() {
     List<Widget> fields = [];
     if (_formData != null) {
-      ['assessment', 'pre', 'post'].forEach((section) {
-        if (_formData![section] != null) {
-          _formData![section].forEach((questionId, questionData) {
-            TextEditingController controller = TextEditingController();
-            _questionControllers[questionId] = controller;
-            fields.add(_buildQuestionField(questionData, questionId, controller));
-          });
+      for (var section in _formData!) {
+        fields.add(Text(
+          section['type'].toString().toUpperCase(),
+          style: Theme.of(context).textTheme.headlineLarge,
+        ));
+        if (section['type'] == 'assessment') {
+          for (var answer in section['answer']) {
+            String questionId = answer['questionName'];
+            TextEditingController controller = _questionControllers.putIfAbsent(
+                questionId, () => TextEditingController(text: answer['answer'])
+            );
+            fields.add(_buildQuestionField(answer, questionId, controller));
+          }
+        } else {
+          for (var answerInfo in section['answer']) {
+            for (var data in answerInfo['data']) {
+              String questionId = data['questionName'];
+              TextEditingController controller = _questionControllers.putIfAbsent(
+                  questionId, () => TextEditingController(text: data['answer'])
+              );
+              fields.add(_buildQuestionField(data, questionId, controller));
+            }
+          }
         }
-      });
+      }
     }
     return fields;
   }
 
+
   Widget _buildQuestionField(Map<String, dynamic> question, String questionId, TextEditingController controller) {
-    var controller = _questionControllers.putIfAbsent(questionId, () => TextEditingController());
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(question['question']),
-          if (question['type'] == 'text' || question['type'] == 'longtext')
-            TextFormField(
-              controller: controller,
-              decoration: const InputDecoration(labelText: 'Answer'),
-              validator: (value) {
-                if (question['required'] && (value == null || value.isEmpty)) {
-                  return 'This field cannot be empty';
-                }
-                return null;
-              },
-            ),
-          if (question['type'] == 'checklist')
-            ...question['option'].map<Widget>((option) {
-              return CheckboxListTile(
-                title: Text(option),
-                value: false,
-                onChanged: (bool? value) {},
-              );
-            }).toList(),
-          if (question['type'] == 'dropdown')
-            DropdownButtonFormField<String>(
-              value: null,
-              items: question['option'].map<DropdownMenuItem<String>>((option) {
-                return DropdownMenuItem<String>(
-                  value: option,
-                  child: Text(option),
-                );
-              }).toList(),
-              onChanged: (value) {},
-              decoration: InputDecoration(labelText: 'Select one'),
-            ),
-          if (question['type'] == 'multiple')
-            ...question['option'].map<Widget>((option) {
-              return RadioListTile<String>(
-                title: Text(option),
-                value: option,
-                groupValue: controller.text,
-                onChanged: (String? value) {
-                  setState(() {
-                    controller.text = value!;
-                  });
-                },
-              );
-            }).toList(),
+          Text(question['questionName']),
+          TextFormField(
+            controller: controller,
+            decoration: InputDecoration(labelText: 'Answer'),
+            onChanged: (value) {
+              // Update the state or perform other operations when the text changes
+            },
+          ),
+          // You can add other widgets based on 'question' details, such as Dropdown, Checkbox, etc.
         ],
       ),
     );
