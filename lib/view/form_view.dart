@@ -151,8 +151,6 @@ class _FormCreateState extends State<FormCreate> {
                     setState(() {
                       _formList[index]['isChecked'] = value ?? false;
                     });
-                    //debug changestate
-                    // print('Checkbox formId: ${_formList[index]['formId']} set to $value');
                   },
                 ),
               ],
