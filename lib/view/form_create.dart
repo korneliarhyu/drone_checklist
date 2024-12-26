@@ -5,14 +5,15 @@ import 'package:drone_checklist/model/form_model.dart';
 import 'package:drone_checklist/Database/database_helper.dart';
 import 'form_view.dart';
 
+// comment
+
+
 class CreateForm extends StatefulWidget {
   final int templateId;
-  final int serverTemplateId;
 
   const CreateForm({
     Key? key,
     required this.templateId,
-    required this.serverTemplateId,
   }) : super(key: key);
 
   @override
@@ -27,12 +28,13 @@ class _CreateFormState extends State<CreateForm> {
   final Map<String, String> _textboxValues = {};
   final Map<String, Set<String>> _checkboxValues = {};
 
-  final Map<String, String> _questionType = {};
-
   // Membuat dua variable kosong bertype Map _templateData dan _formData untuk menghindari error non-nullable.
   Map<String, dynamic>? _templateData = {};
   Map<String, dynamic> _formData = {};
   Map<String, String> _questionName = {};
+  Map<String, String> _questionType = {};
+  Map<String, List<String>> _questionOptions = {};
+
   bool _isLoading = true;
 
   @override
@@ -78,6 +80,7 @@ class _CreateFormState extends State<CreateForm> {
           }
           _questionName[uniqueQuestionId] = questionData['question'];
           _questionType[uniqueQuestionId] = questionData['type'];
+          _questionOptions[uniqueQuestionId] = List<String>.from(questionData['option'] ?? []);
         });
       }
     });
@@ -110,6 +113,7 @@ class _CreateFormState extends State<CreateForm> {
       var answerEntry = {
         "questionName": questionName,
         "answer": value,
+        "option": _questionOptions["$section-$questionId"] ?? [],
         "qType": questionType,
         "dataChanged":
             DateTime.now().toString().split('.').first.replaceAll('-', '/')
@@ -142,7 +146,7 @@ class _CreateFormState extends State<CreateForm> {
     final formModel = FormModel(
       formId: null,
       templateId: widget.templateId,
-      serverTemplateId: widget.serverTemplateId,
+      serverTemplateId: _templateData?['serverTemplateId'],
       formName: _templateData?['templateName'],
       updatedDate: DateTime.now(),
       formData: structuredData,
@@ -150,15 +154,13 @@ class _CreateFormState extends State<CreateForm> {
 
     try {
       await DatabaseHelper.createForm(formModel);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Form Saved!')));
+      showAlert(context, "Form Saved!", "Successfully save the form!!", AlertType.success);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => FormCreate()),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error saving form: $e')));
+      showAlert(context, "Form Not Saved!", "Failed save the form!!", AlertType.failed);
     }
     print(jsonEncode(formModel.formData));
   }
@@ -181,9 +183,7 @@ class _CreateFormState extends State<CreateForm> {
             String uniqueQuestionId = '$section-$questionId';
 
             // Text Editing Controller ini bikin nilai text ngga hilang saat click field lainnya.
-            TextEditingController controller = _questionControllers.putIfAbsent(
-                uniqueQuestionId, () => TextEditingController());
-
+            TextEditingController? controller = _questionControllers[uniqueQuestionId];
             if (controller != null) {
               fields.add(_buildQuestionField(
                   uniqueQuestionId, questionData, controller));

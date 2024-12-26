@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:drone_checklist/database/database_helper.dart';
+import 'package:drone_checklist/helper/utils.dart';
 import 'package:flutter/material.dart';
 
 class FormDetail extends StatefulWidget {
@@ -13,11 +14,19 @@ class FormDetail extends StatefulWidget {
 
 class _FormDetailState extends State<FormDetail> {
   Map<String, TextEditingController> _questionControllers = {};
+  final Map<String, String> _dropdownValues = {}; //dropdown
+  final Map<String, String> _multipleValues = {}; //radio
+  final Map<String, String> _textboxValues = {}; //text and longtext
+  final Map<String, Set<String>> _checkboxValues = {}; //checklist
   Map<String, List<String>> _selectedOptions = {};
 
   List<Map<String, dynamic>>? _formData;
   String? _formName;
   bool _isLoading = true;
+
+  // make condition for checked in pre/post form
+  bool isCheckPre = false;
+  bool isCheckPost = false;
 
   @override
   void dispose() {
@@ -34,55 +43,138 @@ class _FormDetailState extends State<FormDetail> {
     _loadFormData(widget.formId);
   }
 
-  void _saveForm(formData, isChecked) {
-    // Handle form saving logic here
+  void _updateForm(isCheckPre, isCheckPost) async {
+    try {
+      _formData?.forEach((section) {
+        // jika section Pre yang terchecklist, maka akan menambahkan flightNum baru
+        if (section['type'] == 'pre' && isCheckPre) {
+          _newFlight(section);
+        }
+        // jika section Post yang terchecklist, maka akan menambahkan flightNum baru
+        else if (section['type'] == 'post' && isCheckPost) {
+          _newFlight(section);
+        }
+        // Jika tidak ada apa-apa, maka akan terjadi proses update seperti biasa.
+        else {
+          _updateData(section);
+        }
+      });
+      String encodeFormData = jsonEncode(_formData);
+      await DatabaseHelper.updateForm(widget.formId, encodeFormData);
 
-    // loop data untuk mengecek 1-1 typenya mana yang dichecklist atau engga(untuk ngecek type yang mana yang isChecked).
-    // iterasi -> looping -> ngebaca datanya 1-1. dan akan kembali ke atas sampai seluruh data terbaca.
-    //loop ini akan mengecek satu-satu mulai dari pre, jika pre isChecked, maka akan masuk ke dalam if.
-    for (var section in ['assessment', 'pre', 'post']) {
-      if (formData[section] != null) {
-        formData[section].forEach((questionId, questionData){
-          if(questionData['type'] == 'checklist' && isChecked){
-            print("Question '$questionId' is checked: Updating flightNum");
-            questionData['flightNum'] = ''; //cara set flightNum biar increment?
-          } else{
-            print("Updating question '$questionId'");
-          }
-
-          if(_questionControllers.containsKey(questionId)){
-            questionData['answer'] = _questionControllers[questionId]?.text;
-          }
-        });
-
-      } else {
-        // update biasa
-
-      }
+      showAlert(context, "Success Update", "Your update has been success",
+          AlertType.success);
+    } catch (e) {
+      showAlert(context, "Failed Update", "Your update has been cancelled",
+          AlertType.failed);
     }
-
-    try{
-      String encodeForm = jsonEncode(formData);
-      DatabaseHelper.updateForm(
-        widget.formId,
-        encodeForm,
-      );
-    } catch (e, stackTrace) {
-      print("Error saving form: $e");
-      print("StackTrace: $stackTrace");
-    }
-
-
-
-    print("Form saved! $formData");
   }
 
-  Future<void> _loadFormData(int formId) async {
+  // nambah flightNum
+  void _newFlight(Map<String, dynamic> section) {
+    int newFlightNum =
+        section['answer'].length + 1; // supaya flightNum selalu increase + 1
+    List<Map<String, dynamic>> newData =
+    (section['answer'].last['data'] as List<dynamic>)
+        .map<Map<String, dynamic>>((data) {
+      List<String> options =
+      data['option'] != null ? List<String>.from(data['option']) : [];
+
+      return {
+        'questionName': data['questionName'],
+        'answer': _questionControllers[data['questionName']]?.text ?? '',
+        'dataChaged':
+        DateTime.now().toString().split('.').first.replaceAll('-', '/'),
+        'qType': data['qType'],
+        'options': options
+      };
+    }).toList();
+  }
+
+  //update biasa tanpa nambah flight baru
+  void _updateData(Map<String, dynamic> section) {
+    List<dynamic> answers = section['answer'] as List;
+
+    for (var answer in answers) {
+      if (answer['data'] != null) {
+        //cek data di json ada atau tidak kalo ngga ada berarti type assessment
+        List<dynamic> dataEntries = answer['data'] as List;
+
+        for (var data in dataEntries) {
+          String questionName = data['questionName'];
+          TextEditingController? controller =
+          _questionControllers[questionName];
+
+          if (controller != null) {
+            data['answer'] = controller.text;
+            data['dataChanged'] =
+                DateTime.now().toString().split('.').first.replaceAll('-', '/');
+            if (data.containsKey('option') && data['option'] != null) {
+              List<String> options = List<String>.from(data['option']);
+              data['option'] = options;
+            }
+          }
+        }
+      } else {
+        String questionName = answer['questionName'];
+        TextEditingController? controller = _questionControllers[questionName];
+        if (controller != null) {
+          answer['answer'] = controller.text;
+          answer['dataChanged'] = DateTime.now().toString();
+          if (answer.containsKey('option') && answer['option'] != null) {
+            List<String> options = List<String>.from(answer['option']);
+            answer['option'] = options;
+          }
+        }
+      }
+    }
+  }
+
+  // void _saveForm(formData, isChecked) {
+  //   // Handle form saving logic here
+  //   // loop data untuk mengecek 1-1 typenya mana yang dichecklist atau engga(untuk ngecek type yang mana yang isChecked).
+  //   // iterasi -> looping -> ngebaca datanya 1-1. dan akan kembali ke atas sampai seluruh data terbaca.
+  //   //loop ini akan mengecek satu-satu mulai dari pre, jika pre isChecked, maka akan masuk ke dalam if.
+  //   for (var section in ['assessment', 'pre', 'post']) {
+  //     if (formData[section] != null) {
+  //       formData[section].forEach((questionId, questionData) {
+  //         if (questionData['type'] == 'checklist' && isChecked) {
+  //           print("Question '$questionId' is checked: Updating flightNum");
+  //           questionData['flightNum'] = ''; //cara set flightNum biar increment?
+  //         } else {
+  //           print("Updating question '$questionId'");
+  //         }
+  //         if (_questionControllers.containsKey(questionId)) {
+  //           questionData['answer'] = _questionControllers[questionId]?.text;
+  //         }
+  //       });
+  //     } else {
+  //       // update biasa
+  //     }
+  //   }
+  //
+  //   try {
+  //     String encodeForm = jsonEncode(formData);
+  //     DatabaseHelper.updateForm(
+  //       widget.formId,
+  //       encodeForm,
+  //     );
+  //   } catch (e, stackTrace) {
+  //     print("Error saving form: $e");
+  //     print("StackTrace: $stackTrace");
+  //   }
+  //
+  //   print("Form saved! $formData");
+  // }
+
+  void _loadFormData(int formId) async {
     try {
       var form = await DatabaseHelper.getFormById(formId);
       if (form == null) {
         setState(() => _isLoading = false);
         print("Form data not found!: $formId");
+        showAlert(
+            context, "Error 1", "Failed to load form data", AlertType.failed);
         return;
       }
 
@@ -93,10 +185,34 @@ class _FormDetailState extends State<FormDetail> {
           ? List<Map<String, dynamic>>.from(jsonDecode(form['formData']))
           : [];
 
-      print("Decoded form data: $formData");
+      // initiate buat pertanyaan type checklist agar bisa diambil jawaban dan dipassing ke text controller karna value checkbox itu tipe boolean dan bukan string
+      _formData = formData;
+      _formData?.forEach((section) {
+        section['answer'].forEach((answer) {
+          if (answer['data'] != null) {
+            answer['data'].forEach((data) {
+              if (data['qType'] == 'checklist') {
+                String questionId = data['questionName'];
+                List<String> selectedOptions = data['answer']
+                    .split(', ')
+                    .map((item) => item.trim())
+                    .toList();
+                _checkboxValues[questionId] = Set<String>.from(selectedOptions);
+                _questionControllers[questionId] =
+                    TextEditingController(text: data['answer']);
+              } else {
+                _questionControllers[data['questionName']] =
+                    TextEditingController(text: data['answer']);
+              }
+              ;
+            });
+          }
+        });
+      });
+
+      String formName = form['formName'];
       setState(() {
-        _formName = form['formName'];
-        _formData = formData;
+        _formName = formName;
         _isLoading = false;
       });
     } catch (e) {
@@ -104,7 +220,6 @@ class _FormDetailState extends State<FormDetail> {
       print("Error loading form data: $e");
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -131,10 +246,19 @@ class _FormDetailState extends State<FormDetail> {
                 ),
                 const SizedBox(height: 20),
                 ..._buildFormFields(),
+                SwitchListTile(
+                  title: const Text('Add new flight to Post?'),
+                  value: isCheckPost,
+                  onChanged: (bool value) {
+                    setState(() {
+                      isCheckPost = value;
+                    });
+                  },
+                ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: (){
-                    _saveForm(_formData, false);
+                  onPressed: () {
+                    _updateForm(isCheckPre, isCheckPost);
                   },
                   child: const Text('Save Changes'),
                 ),
@@ -149,6 +273,9 @@ class _FormDetailState extends State<FormDetail> {
   List<Widget> _buildFormFields() {
     List<Widget> fields = [];
     if (_formData != null) {
+      // define order sections
+      List<String> sectionOrder = ['assessment', 'pre', 'post'];
+
       for (var section in _formData!) {
         fields.add(Text(
           section['type'].toString().toUpperCase(),
@@ -158,17 +285,17 @@ class _FormDetailState extends State<FormDetail> {
           for (var answer in section['answer']) {
             String questionId = answer['questionName'];
             TextEditingController controller = _questionControllers.putIfAbsent(
-                questionId, () => TextEditingController(text: answer['answer'])
-            );
+                questionId,
+                    () => TextEditingController(text: answer['answer']));
             fields.add(_buildQuestionField(answer, questionId, controller));
           }
         } else {
           for (var answerInfo in section['answer']) {
             for (var data in answerInfo['data']) {
               String questionId = data['questionName'];
-              TextEditingController controller = _questionControllers.putIfAbsent(
-                  questionId, () => TextEditingController(text: data['answer'])
-              );
+              TextEditingController controller =
+              _questionControllers.putIfAbsent(questionId,
+                      () => TextEditingController(text: data['answer']));
               fields.add(_buildQuestionField(data, questionId, controller));
             }
           }
@@ -178,22 +305,80 @@ class _FormDetailState extends State<FormDetail> {
     return fields;
   }
 
+  Widget _buildQuestionField(Map<String, dynamic> question, String questionId,
+      TextEditingController controller) {
+    List<dynamic> options = List<String>.from(question['option']) ??
+        []; // tampung options dropdown & multiple
 
-  Widget _buildQuestionField(Map<String, dynamic> question, String questionId, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(question['questionName']),
-          TextFormField(
-            controller: controller,
-            decoration: InputDecoration(labelText: 'Answer'),
-            onChanged: (value) {
-              // Update the state or perform other operations when the text changes
-            },
-          ),
-          // You can add other widgets based on 'question' details, such as Dropdown, Checkbox, etc.
+          if (question['qType'] == 'text' || question['qType'] == 'longtext')
+            TextFormField(
+                controller: controller,
+                decoration: InputDecoration(labelText: 'Answer')),
+          if (question['qType'] == 'checklist')
+            ...question['option'].map<Widget>((option) {
+              //_checkboxValues[questionId] = menyimpan jawaban dari user.
+              // Set<String>() = mengambil jawaban yang tersimpan di database
+
+              // assign value _checkboxValues[questionId] jika isChecked ada perubahan;
+              // kalau tidak ada perubahan, value isChecked akan tetap sama: Set<String>()
+              bool isChecked = (_checkboxValues[questionId] ??= Set<String>())
+                  .contains(option);
+              return CheckboxListTile(
+                title: Text(option),
+                value: isChecked,
+                onChanged: (bool? isSelected) {
+                  setState(() {
+                    if (isSelected ?? false) {
+                      _checkboxValues[questionId]?.add(option);
+                    } else {
+                      _checkboxValues[questionId]?.remove(option);
+                    }
+                    // Update the controller text to match the current selection state
+                    _questionControllers[questionId]?.text =
+                        _checkboxValues[questionId]?.join(', ') ?? '';
+                  });
+                },
+              );
+            }).toList(),
+          if (question['qType'] == 'dropdown')
+
+            DropdownButtonFormField<String>(
+              value: controller.text.isEmpty ? null : controller.text,
+              onChanged: (String? newValue) {
+                setState(() {
+                  controller.text = newValue ?? '';
+                });
+              },
+
+              items: options.map<DropdownMenuItem<String>>((option) {
+                return DropdownMenuItem<String>(
+                  value: option,
+                  child: Text(option),
+                );
+              }).toList(),
+
+              decoration: InputDecoration(labelText: 'Select one'),
+
+            ),
+          if (question['qType'] == 'multiple')
+            ...question['option'].map<Widget>((option) {
+              return RadioListTile<String>(
+                value: option,
+                groupValue: _multipleValues[questionId] ?? question['answer'],
+                onChanged: (String? value) {
+                  setState(() {
+                    _multipleValues[questionId] = value!;
+                    _questionControllers[questionId]?.text = value ?? '';
+                  });
+                },
+              );
+            }).toList(),
         ],
       ),
     );
