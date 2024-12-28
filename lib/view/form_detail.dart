@@ -46,15 +46,12 @@ class _FormDetailState extends State<FormDetail> {
   void _updateForm(isCheckPre, isCheckPost) async {
     try {
       _formData?.forEach((section) {
-        // jika section Pre yang terchecklist, maka akan menambahkan flightNum baru
         if (section['type'] == 'pre' && isCheckPre) {
           _newFlight(section);
         }
-        // jika section Post yang terchecklist, maka akan menambahkan flightNum baru
         else if (section['type'] == 'post' && isCheckPost) {
           _newFlight(section);
         }
-        // Jika tidak ada apa-apa, maka akan terjadi proses update seperti biasa.
         else {
           _updateData(section);
         }
@@ -89,6 +86,11 @@ class _FormDetailState extends State<FormDetail> {
         'options': options
       };
     }).toList();
+
+    section['answer'].add({
+      'flightNum': newFlightNum,
+      'data': newData
+    });
   }
 
   //update biasa tanpa nambah flight baru
@@ -130,46 +132,10 @@ class _FormDetailState extends State<FormDetail> {
     }
   }
 
-  // void _saveForm(formData, isChecked) {
-  //   // Handle form saving logic here
-  //   // loop data untuk mengecek 1-1 typenya mana yang dichecklist atau engga(untuk ngecek type yang mana yang isChecked).
-  //   // iterasi -> looping -> ngebaca datanya 1-1. dan akan kembali ke atas sampai seluruh data terbaca.
-  //   //loop ini akan mengecek satu-satu mulai dari pre, jika pre isChecked, maka akan masuk ke dalam if.
-  //   for (var section in ['assessment', 'pre', 'post']) {
-  //     if (formData[section] != null) {
-  //       formData[section].forEach((questionId, questionData) {
-  //         if (questionData['type'] == 'checklist' && isChecked) {
-  //           print("Question '$questionId' is checked: Updating flightNum");
-  //           questionData['flightNum'] = ''; //cara set flightNum biar increment?
-  //         } else {
-  //           print("Updating question '$questionId'");
-  //         }
-  //         if (_questionControllers.containsKey(questionId)) {
-  //           questionData['answer'] = _questionControllers[questionId]?.text;
-  //         }
-  //       });
-  //     } else {
-  //       // update biasa
-  //     }
-  //   }
-  //
-  //   try {
-  //     String encodeForm = jsonEncode(formData);
-  //     DatabaseHelper.updateForm(
-  //       widget.formId,
-  //       encodeForm,
-  //     );
-  //   } catch (e, stackTrace) {
-  //     print("Error saving form: $e");
-  //     print("StackTrace: $stackTrace");
-  //   }
-  //
-  //   print("Form saved! $formData");
-  // }
-
   void _loadFormData(int formId) async {
     try {
       var form = await DatabaseHelper.getFormById(formId);
+      print("Form data retrieved: $form");
       if (form == null) {
         setState(() => _isLoading = false);
         print("Form data not found!: $formId");
@@ -177,8 +143,6 @@ class _FormDetailState extends State<FormDetail> {
             context, "Error 1", "Failed to load form data", AlertType.failed);
         return;
       }
-
-      print("Form data retrieved: $form");
 
       // Decode the formData and ensure it's properly cast as List<Map<String, dynamic>>
       List<Map<String, dynamic>>? formData = form['formData'] != null
@@ -211,10 +175,12 @@ class _FormDetailState extends State<FormDetail> {
       });
 
       String formName = form['formName'];
+      print("Form name fetched: $form['formName");
       setState(() {
         _formName = formName;
         _isLoading = false;
       });
+
     } catch (e) {
       setState(() => _isLoading = false);
       print("Error loading form data: $e");
@@ -223,6 +189,7 @@ class _FormDetailState extends State<FormDetail> {
 
   @override
   Widget build(BuildContext context) {
+    print("Building with formName: $_formName");
     return Scaffold(
       appBar: AppBar(
         title: Text('Form Details'),
@@ -255,6 +222,15 @@ class _FormDetailState extends State<FormDetail> {
                     });
                   },
                 ),
+                SwitchListTile(
+                  title: const Text('Add new flight to Pre?'),
+                  value: isCheckPre,
+                  onChanged: (bool value) {
+                    setState(() {
+                      isCheckPre = value;
+                    });
+                  },
+                ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
@@ -273,7 +249,7 @@ class _FormDetailState extends State<FormDetail> {
   List<Widget> _buildFormFields() {
     List<Widget> fields = [];
     if (_formData != null) {
-      // define order sections
+      // define order sections (not done)
       List<String> sectionOrder = ['assessment', 'pre', 'post'];
 
       for (var section in _formData!) {
@@ -307,8 +283,7 @@ class _FormDetailState extends State<FormDetail> {
 
   Widget _buildQuestionField(Map<String, dynamic> question, String questionId,
       TextEditingController controller) {
-    List<dynamic> options = List<String>.from(question['option']) ??
-        []; // tampung options dropdown & multiple
+    List<dynamic> options = List<String>.from(question['option']); // tampung options dropdown & multiple
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -366,15 +341,19 @@ class _FormDetailState extends State<FormDetail> {
               decoration: InputDecoration(labelText: 'Select one'),
 
             ),
+
+          // code maullll
           if (question['qType'] == 'multiple')
             ...question['option'].map<Widget>((option) {
               return RadioListTile<String>(
+                title: Text(option),
                 value: option,
                 groupValue: _multipleValues[questionId] ?? question['answer'],
-                onChanged: (String? value) {
+                onChanged: (String? newValue) {
                   setState(() {
-                    _multipleValues[questionId] = value!;
-                    _questionControllers[questionId]?.text = value ?? '';
+                    _multipleValues[questionId] = newValue!;
+                    print('Updated groupValue: ${_multipleValues[questionId]}');
+                    _questionControllers[questionId]?.text = newValue ?? '';
                   });
                 },
               );
