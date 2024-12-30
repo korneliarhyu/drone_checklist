@@ -81,7 +81,7 @@ class _SelectFormState extends State<SelectForm> {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => CreateForm(
+                          builder: (context) => FormCreate(
                             templateId: chosenTemp['templateId'],
                           ),
                         ),

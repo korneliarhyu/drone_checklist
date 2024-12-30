@@ -7,20 +7,19 @@ import 'form_view.dart';
 
 // comment
 
-
-class CreateForm extends StatefulWidget {
+class FormCreate extends StatefulWidget {
   final int templateId;
 
-  const CreateForm({
+  const FormCreate({
     Key? key,
     required this.templateId,
   }) : super(key: key);
 
   @override
-  _CreateFormState createState() => _CreateFormState();
+  _FormCreateState createState() => _FormCreateState();
 }
 
-class _CreateFormState extends State<CreateForm> {
+class _FormCreateState extends State<FormCreate> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, TextEditingController> _questionControllers = {};
   final Map<String, String> _dropdownValues = {};
@@ -80,7 +79,8 @@ class _CreateFormState extends State<CreateForm> {
           }
           _questionName[uniqueQuestionId] = questionData['question'];
           _questionType[uniqueQuestionId] = questionData['type'];
-          _questionOptions[uniqueQuestionId] = List<String>.from(questionData['option'] ?? []);
+          _questionOptions[uniqueQuestionId] =
+              List<String>.from(questionData['option'] ?? []);
         });
       }
     });
@@ -154,13 +154,15 @@ class _CreateFormState extends State<CreateForm> {
 
     try {
       await DatabaseHelper.createForm(formModel);
-      showAlert(context, "Form Saved!", "Successfully save the form!!", AlertType.success);
+      showAlert(context, "Form Saved!", "Successfully save the form!!",
+          AlertType.success);
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => FormCreate()),
+        MaterialPageRoute(builder: (context) => FormView()),
       );
     } catch (e) {
-      showAlert(context, "Form Not Saved!", "Failed save the form!!", AlertType.failed);
+      showAlert(context, "Form Not Saved!", "Failed save the form!!",
+          AlertType.failed);
     }
     print(jsonEncode(formModel.formData));
   }
@@ -183,7 +185,8 @@ class _CreateFormState extends State<CreateForm> {
             String uniqueQuestionId = '$section-$questionId';
 
             // Text Editing Controller ini bikin nilai text ngga hilang saat click field lainnya.
-            TextEditingController? controller = _questionControllers[uniqueQuestionId];
+            TextEditingController? controller =
+                _questionControllers[uniqueQuestionId];
             if (controller != null) {
               fields.add(_buildQuestionField(
                   uniqueQuestionId, questionData, controller));
