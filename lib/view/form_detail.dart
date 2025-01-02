@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:drone_checklist/database/database_helper.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 class FormDetail extends StatefulWidget {
   final int formId;
@@ -42,46 +43,22 @@ class _FormDetailState extends State<FormDetail> {
 
   void _updateForm(bool isCheckPre, bool isCheckPost) async {
     try {
-      List<Map<String, dynamic>> updatedSections = [];//buat list untuk handle order dari section jsonnya, section type pre, ke type post, ke type assessment
+      List<Map<String, dynamic>> updatedSections = [];
 
       _formData?.forEach((section) {
-        if (section['type'] == 'pre' && isCheckPre) {
-          _newFlight(section);
-        } else if (section['type'] == 'post' && isCheckPost) {
+        bool isNewFlight = (section['type'] == 'pre' && isCheckPre) || (section['type'] == 'post' && isCheckPost);
+
+        if (isNewFlight) {
           _newFlight(section);
         } else {
           _updateData(section);
         }
-
-        //ambil entry terakhir/terbaru pas update formnya
-        List<dynamic> updatedAnswers = [];
-        if (section['type'] == 'assessment') {
-          //handle untuk tipe assessment karena struktur jsonnya beda sendiri dari 2 tipe lain
-          section['answer'].forEach((answer) {
-            updatedAnswers.add({
-              'answer': answer['answer'],
-              'dataChanged': answer['dataChanged'],
-              'option': List<String>.from(answer['option'] ?? []),
-              'qType': answer['qType'],
-              'questionName': answer['questionName']
-            });
-          });
-        } else {
-          //handle default/biasa buat tipe pre dan post
-          Map<String, dynamic> lastEntry = Map<String, dynamic>.from(section['answer'].last);
-          updatedAnswers = [lastEntry];
-        }
-
-        updatedSections.add({
-          "type": section['type'],
-          "answer": updatedAnswers
-        });
+        updatedSections.add(section);
       });
 
-      String encodeUpdatedFormData = jsonEncode(updatedSections); //disini aku pake nama variable updatedSections bisa diganti ke updatedformData, ganti di line 81 sama 75
+      String encodeUpdatedFormData = jsonEncode(updatedSections);
       String encodeFormData = jsonEncode(_formData);
 
-      // Update the database with both formData and updatedFormData
       await DatabaseHelper.updateForm(widget.formId, encodeFormData, encodeUpdatedFormData);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Form updated successfully!')));
     } catch (e) {
@@ -89,19 +66,20 @@ class _FormDetailState extends State<FormDetail> {
     }
   }
 
-
-  //Add new flight entry to json
   void _newFlight(Map<String, dynamic> section) {
-    int newFlightNum = section['answer'].length + 1;
+    int newFlightNum = 1;
+    if (section['answer'].isNotEmpty) {
+      newFlightNum = section['answer']
+          .map<int>((a) => a['flightNum'] as int)
+          .reduce((int a, int b) => math.max(a, b)) + 1;
+    }
     List<Map<String, dynamic>> newData = (section['answer'].last['data'] as List<dynamic>).map<Map<String, dynamic>>((data) {
-      List<String> options = data['option'] != null ? List<String>.from(data['option']) : [];
-
       return {
         'questionName': data['questionName'],
         'answer': _questionControllers[data['questionName']]?.text ?? '',
         'dataChanged': DateTime.now().toString().split('.').first.replaceAll('-', '/'),
         'qType': data['qType'],
-        'option': options
+        'option': List<String>.from(data['option'] ?? [])
       };
     }).toList();
 
@@ -111,40 +89,28 @@ class _FormDetailState extends State<FormDetail> {
     });
   }
 
-
-
-  //update normal (tidak nambah entry baru)
   void _updateData(Map<String, dynamic> section) {
-    List<dynamic> answers = section['answer'] as List;
-    for (var answer in answers) {
-      if (answer['data'] != null) { //cek data di json ada atau tidak kalo ngga ada berarti type assessment langsung ke line 107
-        List<dynamic> dataEntries = answer['data'] as List;
-        for (var data in dataEntries) {
+    for (var flight in section['answer']) {
+      if (flight['data'] != null) {
+        for (var data in flight['data']) {
           String questionName = data['questionName'];
           TextEditingController? controller = _questionControllers[questionName];
           if (controller != null) {
             data['answer'] = controller.text;
             data['dataChanged'] = DateTime.now().toString().split('.').first.replaceAll('-', '/');
-            if (data.containsKey('option') && data['option'] != null) {
-              List<String> options = List<String>.from(data['option']);
-              data['option'] = options;
-            }
           }
         }
       } else {
-        String questionName = answer['questionName'];
+        String questionName = flight['questionName'];
         TextEditingController? controller = _questionControllers[questionName];
         if (controller != null) {
-          answer['answer'] = controller.text;
-          answer['dataChanged'] = DateTime.now().toString();
-          if (answer.containsKey('option') && answer['option'] != null) {
-            List<String> options = List<String>.from(answer['option']);
-            answer['option'] = options;
-          }
+          flight['answer'] = controller.text;
+          flight['dataChanged'] = DateTime.now().toString();
         }
       }
     }
   }
+
 
   void _loadFormData(int formId) async {
     try {
@@ -155,8 +121,8 @@ class _FormDetailState extends State<FormDetail> {
         return;
       }
       print("Form data retrieved: $form");
-      List<Map<String, dynamic>> formData = form['updatedformData'] != null
-          ? List<Map<String, dynamic>>.from(jsonDecode(form['updatedformData']))
+      List<Map<String, dynamic>> formData = form['updatedFormData'] != null
+          ? List<Map<String, dynamic>>.from(jsonDecode(form['updatedFormData']))
           : [];
 
       print("Parsed form data: $formData");
@@ -221,7 +187,6 @@ class _FormDetailState extends State<FormDetail> {
                   onChanged: (bool value) {
                     setState(() {
                       isCheckPre = value;
-                      print("isCheckPre changed to: $value");
                     });
                   },
                 ),
@@ -231,7 +196,6 @@ class _FormDetailState extends State<FormDetail> {
                   onChanged: (bool value) {
                     setState(() {
                       isCheckPost = value;
-                      print("isCheckPost changed to: $value");
                     });
                   },
                 ),
@@ -254,7 +218,6 @@ class _FormDetailState extends State<FormDetail> {
     List<Widget> fields = [];
     if (_formData != null) {
       for (var section in _formData!) {
-        print("Building fields for section: ${section['type']}");
         fields.add(Text(
           section['type'].toString().toUpperCase(),
           style: Theme.of(context).textTheme.headlineLarge,
@@ -279,7 +242,6 @@ class _FormDetailState extends State<FormDetail> {
           }
         }
       }
-      print("Number of fields added: ${fields.length}");
     }
     return fields;
   }
