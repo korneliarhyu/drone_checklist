@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
+import 'package:drone_checklist/model/sync_model.dart';
 part 'api_service.g.dart';
 
 @RestApi(baseUrl: "http://103.102.152.249/webdrone/")
@@ -12,7 +13,7 @@ abstract class ApiService {
 
   // Sync Data API
   @POST("class/database/syncData.php")
-  Future<dynamic> syncData(@Body() Map<String, dynamic> data);
+  Future<HttpResponse> syncData(@Body() SyncModel sync);
 
   // Get All Template from Server
   @GET("class/database/template/all.php")

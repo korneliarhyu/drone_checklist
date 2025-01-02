@@ -61,7 +61,8 @@ class DatabaseHelper {
   static Future<void> updateSyncStatus(int formId, int syncStatus) async {
     final db = await DatabaseHelper.db();
 
-    await db.update('form', {'syncStatus': syncStatus},
+    await db.update(
+        'form', {'syncStatus': syncStatus},
         where: 'formId = ?', whereArgs: [formId]);
   }
 
