@@ -27,6 +27,8 @@ class DatabaseHelper {
       formName TEXT,
       updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       formData TEXT,
+      updatedFormData TEXT,
+      syncStatus INTEGER DEFAULT 0,
       deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP      
       )
     ''');
@@ -56,6 +58,13 @@ class DatabaseHelper {
     );
   }
 
+  static Future<void> updateSyncStatus(int formId, int syncStatus) async {
+    final db = await DatabaseHelper.db();
+
+    await db.update('form', {'syncStatus': syncStatus},
+        where: 'formId = ?', whereArgs: [formId]);
+  }
+
   static Future<int> createForm(FormModel model) async {
     final db = await DatabaseHelper.db();
 
@@ -64,6 +73,7 @@ class DatabaseHelper {
       'serverTemplateId': model.serverTemplateId,
       'formName': model.formName,
       'formData': jsonEncode(model.formData),
+      'updatedFormData': jsonEncode(model.updatedFormData),
       'deletedAt': null
     };
 
@@ -77,13 +87,14 @@ class DatabaseHelper {
   }
 
   static Future<int> updateForm(
-      int formId, String formData) async {
+      int formId, String formData, String updatedFormData) async {
     final db = await DatabaseHelper.db();
 
     final form = {
       // 'formId' : formId,
       // 'formName': formName,
-      'formData': formData
+      'formData': formData,
+      'updatedFormData': updatedFormData
     };
 
     final result =
@@ -118,53 +129,9 @@ class DatabaseHelper {
     return await db.insert("template", templateData);
   }
 
-  static Future<List<Map<String, dynamic>>> getAllChecklist() async {
+  static Future<List<Map<String, dynamic>>> getAllForms() async{
     final db = await DatabaseHelper.db();
-
     return db.query("form", orderBy: "formId");
-
-
-    // template dummy hanya dapat diinsert 1-1.
-    // template 1
-    var templateJson = jsonEncode({
-      "questions": {
-        "question1": {
-          "question": "Is the drone's firmware updated?",
-          "type": "dropdown",
-          "options": ["Yes", "No", "Not Applicable"],
-          "required": true
-        },
-        "question2": {
-          "question": "Inspect propellers for damage",
-          "type": "multiple",
-          "options": [
-            "No damage",
-            "Minor damage",
-            "Major damage",
-            "Needs replacement"
-          ],
-          "required": true
-        },
-        "question3": {
-          "question": "Battery charge level",
-          "type": "text",
-          "options": [],
-          "required": true
-        }
-      }
-    });
-
-    final template = {
-      'templateId': 2,
-      'templateName': 'Drone Checklist',
-      'formType': 'Pre-Flight',
-      'updatedDate': '2024-11-24',
-      'templateFormData': templateJson,
-      'deletedAt': null
-    };
-
-    //return await db.insert('dummy_template', template);
-
   }
 
   static Future<List<Map<String, dynamic>>> getAllTemplates() async {
