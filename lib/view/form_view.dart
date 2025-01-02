@@ -1,5 +1,6 @@
 import 'package:drone_checklist/database/database_helper.dart';
 import 'package:drone_checklist/helper/utils.dart';
+import 'package:drone_checklist/model/sync_model.dart';
 import 'package:drone_checklist/view/form_detail.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,11 @@ class FormView extends StatefulWidget {
 
 class _FormViewState extends State<FormView> {
   List<Map<String, dynamic>> _formList = [];
+
+  // bool selectedForm = false;
+  int? selectedFormIndex;
+
+  // bool confirm = false;
 
   void _callData() async {
     var listData = await DatabaseHelper.getAllForms();
@@ -60,19 +66,18 @@ class _FormViewState extends State<FormView> {
   }
 
   void _sync() async {
-    var dio = Dio();
-    var apiService = ApiService(dio);
+    // List<int> selectedForms = _formList
+    //     .where((form) => form['isChecked'] == true)
+    //     .map((form) => form['formId'] as int)
+    //     .toList();
 
-    List<int> selectedForms = _formList
-        .where((form) => form['isChecked'] == true)
-        .map((form) => form['formId'] as int)
-        .toList();
+    int? selectedForm = selectedFormIndex;
 
     //debug ambil id yang dipilih
-    print("Syncing ID(s): $selectedForms");
+    print("Syncing ID(s): $selectedForm");
 
     // Check apakah ada form yang dipilih
-    if (selectedForms.isEmpty) {
+    if (selectedForm == null || selectedForm == 0) {
       showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -90,56 +95,92 @@ class _FormViewState extends State<FormView> {
             );
           });
       return;
-    }
-
-    bool confirm = await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text("Confirm Sync"),
-            content:
-                const Text("Are you sure you want to sync selected forms?"),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text("No"),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text("Yes"),
-              ),
-            ],
-          );
-        });
-
-    if (confirm) {
-      try {
-        var response =
-            await apiService.syncData({'selectedFormIds': selectedForms});
-        showDialog(
+    } else {
+      bool confirm = await showDialog(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Sync Successful'),
-              content: Text('Sync response: ${response.toString()}'),
+              title: const Text("Confirm Sync"),
+              content:
+                  const Text("Are you sure you want to sync selected forms?"),
               actions: <Widget>[
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('OK'),
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text("No"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text("Yes"),
                 ),
               ],
             );
-          },
-        );
-      } catch (e) {
+          });
+
+      if (confirm) {
+        try {
+          var getForm = await DatabaseHelper.getFormById(selectedForm);
+          if (getForm == null) {
+            print("Form data not found!: $selectedForm");
+            return;
+          }
+          var dio = Dio();
+          var apiService = ApiService(dio);
+
+          SyncModel sync = SyncModel(
+              submissionName: getForm['formName'],
+              templateId: selectedForm,
+              submittedBy: 'User',
+              submittedDate: DateTime.now(),
+              formData: getForm['formData']);
+
+          final response = await apiService.syncData(sync);
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Sync Successful'),
+                content: Text('Sync response: ${response.toString()}'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+
+          // Mengubah syncStatus menjadi 1 = sudah ter Sync.
+          DatabaseHelper.updateSyncStatus(selectedForm, 1);
+        } catch (e) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Sync Failed'),
+                content: Text('Error: $e'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      } else {
+        // Jika user memilih "No"
         showDialog(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('Sync Failed'),
-              content: Text('Error: $e'),
+              title: const Text('Sync Cancelled'),
+              content: const Text('Sync process was cancelled.'),
               actions: <Widget>[
                 TextButton(
                   onPressed: () {
@@ -152,25 +193,6 @@ class _FormViewState extends State<FormView> {
           },
         );
       }
-    } else {
-      // Jika user memilih "No"
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Sync Cancelled'),
-            content: const Text('Sync process was cancelled.'),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          );
-        },
-      );
     }
   }
 
@@ -254,10 +276,17 @@ class _FormViewState extends State<FormView> {
                         ),
                       ),
                       Checkbox(
-                        value: _formList[index]['isChecked'] ?? false,
+                        // karena _formList adalah growableList, jadi kita akan akses listnya dulu untuk dapetin form ke berapa yang kita pilih(berdasarkan indexnya).
+                        // kemudian kita akses ['formId']nya (formId ini yang kita butuhkan untuk proses syncData).
+                        value: selectedFormIndex == _formList[index]['formId'],
                         onChanged: (bool? value) {
                           setState(() {
-                            _formList[index]['isChecked'] = value ?? false;
+                            if (value == true) {
+                              selectedFormIndex =
+                                  _formList[index]['formId']; // Pilih form ini
+                            } else {
+                              selectedFormIndex = null; // Hapus pilihan
+                            }
                           });
                         },
                       ),

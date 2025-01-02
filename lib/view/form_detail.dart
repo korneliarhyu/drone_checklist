@@ -5,7 +5,6 @@ import 'dart:math' as math;
 
 class FormDetail extends StatefulWidget {
   final int formId;
-
   const FormDetail({Key? key, required this.formId}) : super(key: key);
 
   @override
