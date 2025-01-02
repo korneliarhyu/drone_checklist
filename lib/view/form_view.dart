@@ -18,7 +18,7 @@ class _FormViewState extends State<FormView> {
   List<Map<String, dynamic>> _formList = [];
 
   void _callData() async {
-    var listData = await DatabaseHelper.getAllChecklist();
+    var listData = await DatabaseHelper.getAllForms();
 
     _formList = listData.map((element) {
       return {

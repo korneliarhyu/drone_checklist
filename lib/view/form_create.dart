@@ -3,9 +3,6 @@ import 'package:drone_checklist/helper/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/model/form_model.dart';
 import 'package:drone_checklist/Database/database_helper.dart';
-import 'form_view.dart';
-
-// comment
 
 class FormCreate extends StatefulWidget {
   final int templateId;
@@ -150,16 +147,11 @@ class _FormCreateState extends State<FormCreate> {
       formName: _templateData?['templateName'],
       updatedDate: DateTime.now(),
       formData: structuredData,
+      updatedFormData: structuredData,
     );
 
     try {
       await DatabaseHelper.createForm(formModel);
-      showAlert(context, "Form Saved!", "Successfully save the form!!",
-          AlertType.success);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => FormView()),
-      );
     } catch (e) {
       showAlert(context, "Form Not Saved!", "Failed save the form!!",
           AlertType.failed);

@@ -5,6 +5,8 @@ class FormModel {
   final String formName;
   final DateTime updatedDate;
   final List<Map<String, dynamic>> formData;
+  final List<Map<String, dynamic>>? updatedFormData;
+  final int? syncStatus;
   final DateTime? deletedAt;
 
   FormModel({
@@ -14,6 +16,8 @@ class FormModel {
     required this.formName,
     required this.updatedDate,
     required this.formData,
+    this.updatedFormData,
+    this.syncStatus,
     this.deletedAt,
   });
 
@@ -26,6 +30,8 @@ class FormModel {
       'formName': formName,
       'updatedDate': updatedDate.toIso8601String(),
       'formData': formData,
+      'updatedFormData': updatedFormData,
+      'syncStatus': syncStatus,
       'deletedAt' : deletedAt,
     };
   }
@@ -39,6 +45,7 @@ class FormModel {
       formName: json['formName'],
       updatedDate: DateTime.parse(json['updatedDate']),
       formData: List<Map<String, dynamic>>.from(json['formData']),
+      syncStatus: json['syncStatus'],
       deletedAt: DateTime.parse(json['deletedAt']),
     );
   }

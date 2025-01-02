@@ -133,11 +133,11 @@ class _TemplateDetailState extends State<TemplateDetail> {
               onPressed: () async {
                 await _downloadTemplate(widget.templateId);
                 // Refresh page
-                Navigator.of(context).pop();
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) =>
-                      TemplateDetail(templateId: widget.templateId),
-                ));
+                // Navigator.of(context).pop();
+                // Navigator.of(context).push(MaterialPageRoute(
+                //   builder: (context) =>
+                //       TemplateDetail(templateId: widget.templateId),
+                // ));
               },
               icon: Icon(Icons.download),
               label: Text("Download Template"),
