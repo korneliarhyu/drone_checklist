@@ -1,6 +1,6 @@
 class SyncModel {
   final String submissionName;
-  final int templateId;
+  final String templateId;
   final String submittedBy;
   final DateTime submittedDate;
   final String formData;
@@ -18,7 +18,7 @@ class SyncModel {
       submissionName: json['submissionName'],
       templateId: json['templateId'],
       submittedBy: json['submittedBy'],
-      submittedDate: DateTime.parse(json['submittedDate']),
+      submittedDate: json['submittedDate'],
       formData: json['formData'],
     );
   }
