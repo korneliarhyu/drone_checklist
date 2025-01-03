@@ -66,18 +66,13 @@ class _FormViewState extends State<FormView> {
   }
 
   void _sync() async {
-    // List<int> selectedForms = _formList
-    //     .where((form) => form['isChecked'] == true)
-    //     .map((form) => form['formId'] as int)
-    //     .toList();
-
     int? selectedForm = selectedFormIndex;
 
     //debug ambil id yang dipilih
     print("Syncing ID(s): $selectedForm");
 
     // Check apakah ada form yang dipilih
-    if (selectedForm == null || selectedForm == 0) {
+    if (selectedForm == null) {
       showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -120,20 +115,43 @@ class _FormViewState extends State<FormView> {
         try {
           var getForm = await DatabaseHelper.getFormById(selectedForm);
           if (getForm == null) {
-            print("Form data not found!: $selectedForm");
+            print("Valid form data not found or missing templateId for: $selectedForm");
             return;
           }
+
           var dio = Dio();
+
+          dio.interceptors.add(LogInterceptor(
+            requestHeader: true,
+            requestBody: true,
+            responseBody: true,
+            responseHeader: true,
+          ));
+
           var apiService = ApiService(dio);
 
-          SyncModel sync = SyncModel(
-              submissionName: getForm['formName'],
-              templateId: selectedForm,
-              submittedBy: 'User',
-              submittedDate: DateTime.now(),
-              formData: getForm['formData']);
+          // SyncModel sync = SyncModel(
+          //     submissionName: getForm['formName'],
+          //     templateId: serverTemplateId,
+          //     submittedBy: 'User',
+          //     submittedDate: DateTime.now(),
+          //     formData: getForm['formData']);
 
-          final response = await apiService.syncData(sync);
+          FormData sync = FormData.fromMap({
+            "submissionName": getForm['formName'].toString(),
+            "templateId": getForm['serverTemplateId'].toString(),
+            "submittedBy": "User",
+            "submittedDate":DateTime.now().toString(),
+            "formData": getForm['formData'].toString(),
+          });
+
+          final response = await dio.post(
+            "http://103.102.152.249/webdrone/class/database/syncData.php",
+            data: sync
+          );
+
+          print("response result : $response");
+
           showDialog(
             context: context,
             builder: (BuildContext context) {
