@@ -210,7 +210,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
       subtitle: DropdownButton<String>(
         items: question['option'].map<DropdownMenuItem<String>>((option) {
           return DropdownMenuItem<String>(
-            value: option,
+            value: '',
             child: Text(option),
           );
         }).toList(),
@@ -225,11 +225,24 @@ class _TemplateDetailState extends State<TemplateDetail> {
       title: Text(question['question']),
       subtitle: Column(
         children: question['option'].map<Widget>((option) {
-          return CheckboxListTile(
-            value: false,
-            onChanged: (bool? value) {},
-            title: Text(option),
+          return Row(
+            children:[
+              Icon(
+                question['selectedOptions']?.contains(option) ?? false
+                    ? Icons.check_box
+                    : Icons.check_box_outline_blank,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(option),
+            ],
           );
+          //before
+          // return CheckboxListTile(
+          //   value: false,
+          //   onChanged: (bool? value) {},
+          //   title: Text(option),
+          // );
         }).toList(),
       ),
     );
@@ -238,10 +251,9 @@ class _TemplateDetailState extends State<TemplateDetail> {
   Widget _buildTextQuestion(Map<String, dynamic> question) {
     return ListTile(
       title: Text(question['question']),
-      subtitle: TextField(
-        decoration: InputDecoration(
-          hintText: 'Enter your answer',
-        ),
+      subtitle: Text(
+        'Enter your answer',
+        style: TextStyle(color: Colors.grey),
       ),
     );
   }
@@ -251,12 +263,25 @@ class _TemplateDetailState extends State<TemplateDetail> {
       title: Text(question['question']),
       subtitle: Column(
         children: question['option'].map<Widget>((option) {
-          return RadioListTile<String>(
-            value: option.toString(),
-            groupValue: null,
-            onChanged: (value) {},
-            title: Text(option.toString()),
+          return Row(
+            children:[
+              Icon(
+                option == question['selectedOption']
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(option),
+            ],
           );
+          //before
+          // return RadioListTile<String>(
+          //   value: option.toString(),
+          //   groupValue: null,
+          //   onChanged: (value) {},
+          //   title: Text(option.toString()),
+          // );
         }).toList(),
       ),
     );
@@ -267,10 +292,13 @@ class _TemplateDetailState extends State<TemplateDetail> {
       title: Text(question['question']),
       subtitle: Padding(
           padding: const EdgeInsets.only(top: 8.0),
-          child: TextField(
-            maxLines: 4,
-            decoration: InputDecoration(
-                border: OutlineInputBorder(), hintText: "Enter your answer"),
+          child: Text(
+            'Enter your answer',
+            style: TextStyle(color: Colors.grey),
+            //before
+            // maxLines: 4,
+            // decoration: InputDecoration(
+            //     border: OutlineInputBorder(), hintText: "Enter your answer"),
           )),
     );
   }
