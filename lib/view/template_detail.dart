@@ -113,17 +113,18 @@ class _TemplateDetailState extends State<TemplateDetail> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _templateData.isEmpty
-          ? const Center(child: Text('No template data available'))
-          : ListView(
-        children: [
-          if (_templateData['assessment'] != null &&
-              _templateData['pre'] != null &&
-              _templateData['post'] != null)
-            _buildSection('Assessment', _templateData),
-          _buildSection('Pre-Check', _templateData),
-          _buildSection('Post-Check', _templateData),
-        ],
-      ),
+            ? const Center(child: Text('No template data available'))
+            : ListView(
+              padding: const EdgeInsets.only(bottom: 85.0),
+              children: [
+                if (_templateData['assessment'] != null &&
+                    _templateData['pre'] != null &&
+                    _templateData['post'] != null)
+                  _buildSection('Assessment', _templateData),
+                _buildSection('Pre-Check', _templateData),
+                _buildSection('Post-Check', _templateData),
+              ],
+            ),
       floatingActionButton: Stack(
         children: [
           Positioned(
@@ -225,24 +226,16 @@ class _TemplateDetailState extends State<TemplateDetail> {
       title: Text(question['question']),
       subtitle: Column(
         children: question['option'].map<Widget>((option) {
-          return Row(
-            children:[
-              Icon(
-                question['selectedOptions']?.contains(option) ?? false
-                    ? Icons.check_box
-                    : Icons.check_box_outline_blank,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(option),
-            ],
+          return CheckboxListTile(
+            value: false,
+            onChanged: null,
+            title: Text(
+              option,
+              style: const TextStyle(
+                color: Colors.black,
+              )
+            ),
           );
-          //before
-          // return CheckboxListTile(
-          //   value: false,
-          //   onChanged: (bool? value) {},
-          //   title: Text(option),
-          // );
         }).toList(),
       ),
     );
@@ -251,9 +244,22 @@ class _TemplateDetailState extends State<TemplateDetail> {
   Widget _buildTextQuestion(Map<String, dynamic> question) {
     return ListTile(
       title: Text(question['question']),
-      subtitle: Text(
-        'Enter your answer',
-        style: TextStyle(color: Colors.grey),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter your answer',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              height: 1,
+              color: Colors.grey,
+            )
+          ],
+        )
       ),
     );
   }
@@ -263,25 +269,17 @@ class _TemplateDetailState extends State<TemplateDetail> {
       title: Text(question['question']),
       subtitle: Column(
         children: question['option'].map<Widget>((option) {
-          return Row(
-            children:[
-              Icon(
-                option == question['selectedOption']
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_unchecked,
-                size: 18,
+          return RadioListTile<String>(
+            value: option.toString(),
+            groupValue: null,
+            onChanged: null,
+            title: Text(
+              option.toString(),
+              style: TextStyle(
+                color: Colors.black
               ),
-              const SizedBox(width: 8),
-              Text(option),
-            ],
+            ),
           );
-          //before
-          // return RadioListTile<String>(
-          //   value: option.toString(),
-          //   groupValue: null,
-          //   onChanged: (value) {},
-          //   title: Text(option.toString()),
-          // );
         }).toList(),
       ),
     );
@@ -291,14 +289,20 @@ class _TemplateDetailState extends State<TemplateDetail> {
     return ListTile(
       title: Text(question['question']),
       subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: Text(
-            'Enter your answer',
-            style: TextStyle(color: Colors.grey),
-            //before
-            // maxLines: 4,
-            // decoration: InputDecoration(
-            //     border: OutlineInputBorder(), hintText: "Enter your answer"),
+        padding: const EdgeInsets.only(top: 8.0),
+          child: Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            height: 80.0,
+            child: SingleChildScrollView(
+              child: Text(
+                'Enter your answer',
+                style: TextStyle(color: Colors.grey),
+              )
+            )
           )),
     );
   }
