@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:drone_checklist/model/form_model.dart';
 import 'package:drone_checklist/Database/database_helper.dart';
 
+import 'form_view.dart';
+
 class FormCreate extends StatefulWidget {
   final int templateId;
 
@@ -152,6 +154,16 @@ class _FormCreateState extends State<FormCreate> {
 
     try {
       await DatabaseHelper.createForm(formModel);
+
+      //navigating to form view after saving
+      if (mounted){
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => FormView(),
+            ),
+        );
+      }
     } catch (e) {
       showAlert(context, "Form Not Saved!", "Failed save the form!!",
           AlertType.failed);
@@ -198,7 +210,7 @@ class _FormCreateState extends State<FormCreate> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(question['question']),
-          if (question['type'] == 'text' || question['type'] == 'longtext')
+          if (question['type'] == 'text')
             TextFormField(
               controller: controller,
               decoration: InputDecoration(labelText: "Answer"),
@@ -265,6 +277,24 @@ class _FormCreateState extends State<FormCreate> {
                 },
               );
             }).toList(),
+          if (question['type'] == 'longtext')
+            TextFormField(
+              maxLines: null,
+              //controller: controller,
+              decoration: InputDecoration(labelText: "Answer"),
+              validator: (value) {
+                if (question['required'] && (value == null || value.isEmpty)) {
+                  return 'This field cannot be empty';
+                }
+                return null;
+              },
+              keyboardType: TextInputType.multiline,
+              onChanged: (value) {
+                setState(() {
+                  _textboxValues[uniqueQuestionId] = value;
+                });
+              },
+            ),
         ],
       ),
     );

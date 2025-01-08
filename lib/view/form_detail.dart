@@ -217,28 +217,65 @@ class _FormDetailState extends State<FormDetail> {
     List<Widget> fields = [];
     if (_formData != null) {
       for (var section in _formData!) {
-        fields.add(Text(
-          section['type'].toString().toUpperCase(),
-          style: Theme.of(context).textTheme.headlineLarge,
+        fields.add(Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Text(
+              section['type'].toString().toUpperCase(),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineLarge,
+            )
         ));
-        if (section['type'] == 'assessment') {
-          for (var answer in section['answer']) {
-            String questionId = answer['questionName'];
-            TextEditingController controller = _questionControllers.putIfAbsent(
-                questionId, () => TextEditingController(text: answer['answer'])
-            );
-            fields.add(_buildQuestionField(answer, questionId, controller));
+
+        if (section['type'] != 'assessment') {
+          for (var flight in section['answer']) {
+            fields.add(Card(
+              elevation: 3,
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Flight Number: ${flight['flightNum']}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...(flight['data'] as List<dynamic>).map<Widget>((data){
+                      String questionId = data['questionName'];
+                      TextEditingController controller = _questionControllers.putIfAbsent(
+                          questionId, () => TextEditingController(text: data['answer']));
+                      return _buildQuestionField(data, questionId, controller);
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ));
           }
         } else {
-          for (var answerInfo in section['answer']) {
-            for (var data in answerInfo['data']) {
-              String questionId = data['questionName'];
-              TextEditingController controller = _questionControllers.putIfAbsent(
-                  questionId, () => TextEditingController(text: data['answer'])
-              );
-              fields.add(_buildQuestionField(data, questionId, controller));
-            }
-          }
+          fields.add(Card(
+            elevation: 3,
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    ...(section['answer'] as List<dynamic>).map<Widget>((answer) {
+                      String questionId = answer['questionName'];
+                      TextEditingController controller = _questionControllers.putIfAbsent(
+                        questionId, () => TextEditingController(text: answer['answer']),
+                      );
+                      return _buildQuestionField(answer, questionId, controller);
+                    }).toList(),
+                  ],
+                )
+            ),
+          ));
         }
       }
     }
@@ -308,6 +345,24 @@ class _FormDetailState extends State<FormDetail> {
                 },
               );
             }).toList(),
+          if (question['qType'] == 'longText')
+            TextFormField(
+              maxLines: null,
+              //controller: controller,
+              decoration: InputDecoration(labelText: "Answer"),
+              validator: (value) {
+                if (question['required'] && (value == null || value.isEmpty)) {
+                  return 'This field cannot be empty';
+                }
+                return null;
+              },
+              keyboardType: TextInputType.multiline,
+              onChanged: (value) {
+                setState(() {
+                  _textboxValues[questionId] = value;
+                });
+              },
+            ),
         ],
       ),
     );
