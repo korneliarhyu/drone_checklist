@@ -1,98 +1,309 @@
+import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:drone_checklist/database/database_helper.dart';
+import 'package:drone_checklist/helper/utils.dart';
 import 'package:flutter/material.dart';
-import 'form_create.dart';
+import 'package:drone_checklist/model/template_model.dart';
+import 'package:drone_checklist/services/api_service.dart';
 
-class SelectForm extends StatefulWidget {
-  const SelectForm({super.key});
+class TemplateSelect extends StatefulWidget {
+  final int templateId;
+
+  const TemplateSelect({
+    Key? key,
+    required this.templateId,
+  }) : super(key: key);
 
   @override
-  _SelectFormState createState() => _SelectFormState();
+  _TemplateSelectState createState() => _TemplateSelectState();
 }
 
-class _SelectFormState extends State<SelectForm> {
-
-  late Future<List<Map<String, dynamic>>> _templatesFuture;
+class _TemplateSelectState extends State<TemplateSelect> {
+  // menggunakan late supaya program menunggu sampai database benar-benar siap untuk fetch template form.
+  late Map<String, dynamic> _templateData = {};
+  late bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _templatesFuture = _getAllTemplates();
+    // memanggil sesuai templateId yang diclick
+    _loadTemplateData(widget.templateId);
   }
 
-  Future<List<Map<String, dynamic>>> _getAllTemplates() async {
-    return await DatabaseHelper.getAllTemplates();
+  // Fungsi ini untuk memuat data template dari API berdasarkan ID.
+  Future<void> _loadTemplateData(int templateId) async {
+    try {
+      final dio = Dio();
+      final apiService = ApiService(dio);
+
+      // API untuk mendapatkan detail template adalah downloadTemplate(templateId);
+      final response = await apiService.downloadTemplate(templateId);
+
+      // response API diconvert ke dalam codingan menggunakan jsonDecode.
+      final Map<String, dynamic> templateData = jsonDecode(response);
+
+      //debug
+      print("Fetched template: $templateData");
+      // _templateData = templateData;
+
+      setState(() {
+        // menampung return API ke state _templateData;
+        _templateData = templateData;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching template: $e");
+      setState(() {
+        _isLoading = false;
+        _templateData = {};
+      });
+    }
   }
 
-  Future<void> _deleteTemplate(int templateId) async {
-    await DatabaseHelper.deleteTemplate(templateId);
+  Future<bool> _downloadTemplate(templateId) async {
+    try {
+      await _loadTemplateData(templateId);
 
-    //refresh list
-    setState(() {
-      _templatesFuture = _getAllTemplates();
-    });
+      if (_templateData.isEmpty) {
+        print("Template data is empty or not found");
+        return false;
+      } else {
+        Map<String, dynamic> templateFormData = {
+          'assessment': _templateData['assessment'],
+          'pre': _templateData['pre'],
+          'post': _templateData['post']
+        };
+
+        // Jika data tidak kosong, mapping seluruh data dari _templateData ke dalam model database.
+        final templateModel = TemplateModel(
+            templateId: null,
+            serverTemplateId: _templateData['id'],
+            templateName: _templateData['templateName'],
+            formType: 'assessment-pre-post',
+            updatedDate: DateTime.now(),
+          templateFormData: templateFormData,
+            deletedAt: null
+        );
+
+        DatabaseHelper.insertTemplate(templateModel);
+
+        //alert success
+        showAlert(
+            context, "Success", "Success download Template", AlertType.success);
+      }
+
+      return true;
+    } catch (e) {
+      print("Error: $e");
+      // alert gagal
+      showAlert(
+          context, "Failed", "Failed download Template", AlertType.failed);
+      return false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    const String appTitle = 'Select downloaded template';
     return Scaffold(
-        appBar: AppBar(
-          title: const Text(appTitle),
-          leading: IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_rounded),
+      appBar: AppBar(
+        title: Text(_templateData['templateName'] != null
+            ? _templateData['templateName']!
+            : "Form"),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _templateData.isEmpty
+            ? const Center(child: Text('No template data available'))
+            : ListView(
+              padding: const EdgeInsets.only(bottom: 85.0),
+              children: [
+                if (_templateData['assessment'] != null &&
+                    _templateData['pre'] != null &&
+                    _templateData['post'] != null)
+                  _buildSection('Assessment', _templateData),
+                _buildSection('Pre-Check', _templateData),
+                _buildSection('Post-Check', _templateData),
+              ],
+            ),
+      floatingActionButton: Stack(
+        children: [
+          Positioned(
+            bottom: 16,
+            right: 16, // Atur posisi di kanan bawah
+            child: FloatingActionButton.extended(
+              onPressed: () async {
+                await _downloadTemplate(widget.templateId);
+                // Refresh page
+                // Navigator.of(context).pop();
+                // Navigator.of(context).push(MaterialPageRoute(
+                //   builder: (context) =>
+                //       TemplateDetail(templateId: widget.templateId),
+                // ));
+              },
+              icon: Icon(Icons.download),
+              label: Text("Download Template"),
+              tooltip: 'Download Template',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection(String title, Map<String, dynamic> section) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        body: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _templatesFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text("Error: ${snapshot.error}"));
-            } else if (snapshot.data != null && snapshot.data!.isEmpty) {
-              return const Center(child: Text("No templates available."));
-            } else {
-              return ListView.builder(
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  var chosenTemp = snapshot.data![index];
-                  return Card(
-                    margin: const EdgeInsets.all(15),
 
-                    // Menggunakan List Tile untuk layout setiap card.
-                    child: ListTile(
-                      leading: const Icon(Icons.description, color: Colors.blue), // Leading icon
-                      title: Text(
-                        chosenTemp['templateName'],
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _deleteTemplate(chosenTemp['templateId']),
-                          ),
-                          const Icon(Icons.arrow_forward_rounded, color: Colors.grey),
-                        ],
-                      ),
-                       // Trailing icon
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FormCreate(
-                            templateId: chosenTemp['templateId'],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            }
-          },
-        ),
+        //ini tadinya error
+        ...section.keys.take(1).expand((entry) {
+          Map<String, dynamic> param = new Map<String, dynamic>(); //temp
+          if (title == "Assessment") {
+            param = _templateData['assessment'];
+          } else if (title == "Pre-Check") {
+            param = _templateData['pre'];
+          } else if (title == "Post-Check") {
+            param = _templateData['post'];
+          }
+          // final questionKey = entry.key;
+          // final questionData = entry.value;
+
+          return _buildQuestions(param);
+        }),
+      ],
+    );
+  }
+
+  List<Widget> _buildQuestions(Map<String, dynamic> questions) {
+    List<Widget> questionWidgets = [];
+    questions.forEach((questionKey, questionValue) {
+      var question = questionValue as Map<String, dynamic>;
+      switch (question['type']) {
+        case 'dropdown':
+          questionWidgets.add(_buildDropdownQuestion(question));
+          break;
+        case 'multiple':
+          questionWidgets.add(_buildMultipleChoiceQuestion(question));
+          break;
+        case 'text':
+          questionWidgets.add(_buildTextQuestion(question));
+          break;
+        case 'checklist':
+          questionWidgets.add(_buildChecklistQuestion(question));
+          break;
+        case 'longtext':
+          questionWidgets.add(_buildLongTextQuestion(question));
+      }
+    });
+    return questionWidgets;
+  }
+
+  Widget _buildDropdownQuestion(Map<String, dynamic> question) {
+    return ListTile(
+      title: Text(question['question']),
+      subtitle: DropdownButton<String>(
+        items: question['option'].map<DropdownMenuItem<String>>((option) {
+          return DropdownMenuItem<String>(
+            value: '',
+            child: Text(option),
+          );
+        }).toList(),
+        onChanged: (value) {},
+        isExpanded: true,
+      ),
+    );
+  }
+
+  Widget _buildChecklistQuestion(Map<String, dynamic> question) {
+    return ListTile(
+      title: Text(question['question']),
+      subtitle: Column(
+        children: question['option'].map<Widget>((option) {
+          return CheckboxListTile(
+            value: false,
+            onChanged: null,
+            title: Text(
+              option,
+              style: const TextStyle(
+                color: Colors.black,
+              )
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildTextQuestion(Map<String, dynamic> question) {
+    return ListTile(
+      title: Text(question['question']),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter your answer',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              height: 1,
+              color: Colors.grey,
+            )
+          ],
+        )
+      ),
+    );
+  }
+
+  Widget _buildMultipleChoiceQuestion(Map<String, dynamic> question) {
+    return ListTile(
+      title: Text(question['question']),
+      subtitle: Column(
+        children: question['option'].map<Widget>((option) {
+          return RadioListTile<String>(
+            value: option.toString(),
+            groupValue: null,
+            onChanged: null,
+            title: Text(
+              option.toString(),
+              style: TextStyle(
+                color: Colors.black
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildLongTextQuestion(Map<String, dynamic> question) {
+    return ListTile(
+      title: Text(question['question']),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 8.0),
+          child: Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            height: 80.0,
+            child: SingleChildScrollView(
+              child: Text(
+                'Enter your answer',
+                style: TextStyle(color: Colors.grey),
+              )
+            )
+          )),
     );
   }
 }

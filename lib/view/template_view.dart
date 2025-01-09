@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:drone_checklist/view/template_detail.dart';
+import 'package:drone_checklist/view/template_select.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:drone_checklist/model/json_model.dart';
@@ -69,7 +69,7 @@ class TemplateView extends StatelessWidget {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => TemplateDetail(
+                                builder: (context) => TemplateSelect(
                                       templateId: template.id,
                                     )));
                         // Handle navigation or further actions

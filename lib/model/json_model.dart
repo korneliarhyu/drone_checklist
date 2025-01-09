@@ -9,6 +9,7 @@ class Template {
     //required this.templateData
   });
 
+  // factory constructor
   factory Template.fromJson(Map<String, dynamic> json) {
     return Template(
       id: json['id'],

@@ -3,15 +3,15 @@ import 'package:drone_checklist/database/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-class FormDetail extends StatefulWidget {
+class FormFill extends StatefulWidget {
   final int formId;
-  const FormDetail({Key? key, required this.formId}) : super(key: key);
+  const FormFill({Key? key, required this.formId}) : super(key: key);
 
   @override
-  _FormDetailState createState() => _FormDetailState();
+  _FormFillState createState() => _FormFillState();
 }
 
-class _FormDetailState extends State<FormDetail> {
+class _FormFillState extends State<FormFill> {
   Map<String, TextEditingController> _questionControllers = {};
   final Map<String, String> _dropdownValues = {}; //dropdown
   final Map<String, String> _multipleValues = {}; //radio
@@ -45,7 +45,8 @@ class _FormDetailState extends State<FormDetail> {
       List<Map<String, dynamic>> updatedSections = [];
 
       _formData?.forEach((section) {
-        bool isNewFlight = (section['type'] == 'pre' && isCheckPre) || (section['type'] == 'post' && isCheckPost);
+        bool isNewFlight = (section['type'] == 'pre' && isCheckPre) ||
+            (section['type'] == 'post' && isCheckPost);
 
         if (isNewFlight) {
           _newFlight(section);
@@ -58,10 +59,13 @@ class _FormDetailState extends State<FormDetail> {
       String encodeUpdatedFormData = jsonEncode(updatedSections);
       String encodeFormData = jsonEncode(_formData);
 
-      await DatabaseHelper.updateForm(widget.formId, encodeFormData, encodeUpdatedFormData);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Form updated successfully!')));
+      await DatabaseHelper.updateForm(
+          widget.formId, encodeFormData, encodeUpdatedFormData);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Form updated successfully!')));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error updating form: $e')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error updating form: $e')));
     }
   }
 
@@ -69,23 +73,23 @@ class _FormDetailState extends State<FormDetail> {
     int newFlightNum = 1;
     if (section['answer'].isNotEmpty) {
       newFlightNum = section['answer']
-          .map<int>((a) => a['flightNum'] as int)
-          .reduce((int a, int b) => math.max(a, b)) + 1;
+              .map<int>((a) => a['flightNum'] as int)
+              .reduce((int a, int b) => math.max(a, b)) + 1;
     }
-    List<Map<String, dynamic>> newData = (section['answer'].last['data'] as List<dynamic>).map<Map<String, dynamic>>((data) {
+    List<Map<String, dynamic>> newData =
+        (section['answer'].last['data'] as List<dynamic>)
+            .map<Map<String, dynamic>>((data) {
       return {
         'questionName': data['questionName'],
         'answer': _questionControllers[data['questionName']]?.text ?? '',
-        'dataChanged': DateTime.now().toString().split('.').first.replaceAll('-', '/'),
+        'dataChanged':
+            DateTime.now().toString().split('.').first.replaceAll('-', '/'),
         'qType': data['qType'],
         'option': List<String>.from(data['option'] ?? [])
       };
     }).toList();
 
-    section['answer'].add({
-      'flightNum': newFlightNum,
-      'data': newData
-    });
+    section['answer'].add({'flightNum': newFlightNum, 'data': newData});
   }
 
   void _updateData(Map<String, dynamic> section) {
@@ -93,10 +97,12 @@ class _FormDetailState extends State<FormDetail> {
       if (flight['data'] != null) {
         for (var data in flight['data']) {
           String questionName = data['questionName'];
-          TextEditingController? controller = _questionControllers[questionName];
+          TextEditingController? controller =
+              _questionControllers[questionName];
           if (controller != null) {
             data['answer'] = controller.text;
-            data['dataChanged'] = DateTime.now().toString().split('.').first.replaceAll('-', '/');
+            data['dataChanged'] =
+                DateTime.now().toString().split('.').first.replaceAll('-', '/');
           }
         }
       } else {
@@ -109,7 +115,6 @@ class _FormDetailState extends State<FormDetail> {
       }
     }
   }
-
 
   void _loadFormData(int formId) async {
     try {
@@ -133,11 +138,16 @@ class _FormDetailState extends State<FormDetail> {
             answer['data'].forEach((data) {
               if (data['qType'] == 'checklist') {
                 String questionId = data['questionName'];
-                List<String> selectedOptions = data['answer'].split(', ').map((item) => item.trim()).toList();
+                List<String> selectedOptions = data['answer']
+                    .split(', ')
+                    .map((item) => item.trim())
+                    .toList();
                 _checkboxValues[questionId] = Set<String>.from(selectedOptions);
-                _questionControllers[questionId] = TextEditingController(text: data['answer']);
+                _questionControllers[questionId] =
+                    TextEditingController(text: data['answer']);
               } else {
-                _questionControllers[data['questionName']] = TextEditingController(text: data['answer']);
+                _questionControllers[data['questionName']] =
+                    TextEditingController(text: data['answer']);
               }
             });
           }
@@ -154,62 +164,61 @@ class _FormDetailState extends State<FormDetail> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_formName?['formName'] ?? 'Untitled Form'),
+        title: Text("Fill Form"),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _formData == null
-          ? const Center(child: Text('No form data available'))
-          : Builder(
-        builder: (context) {
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ListView(
-              children: [
-                Text(
-                  _formName?['formName'] ?? 'Untitled Form',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ..._buildFormFields(),
-                SwitchListTile(
-                  title: const Text('Add new flight for Pre?'),
-                  value: isCheckPre,
-                  onChanged: (bool value) {
-                    setState(() {
-                      isCheckPre = value;
-                    });
+              ? const Center(child: Text('No form data available'))
+              : Builder(
+                  builder: (context) {
+                    return Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ListView(
+                        children: [
+                          Text(
+                            _formName?['formName'] ?? 'Untitled Form',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          ..._buildFormFields(),
+                          SwitchListTile(
+                            title: const Text('Add new flight for Pre?'),
+                            value: isCheckPre,
+                            onChanged: (bool value) {
+                              setState(() {
+                                isCheckPre = value;
+                              });
+                            },
+                          ),
+                          SwitchListTile(
+                            title: const Text('Add new flight for Post?'),
+                            value: isCheckPost,
+                            onChanged: (bool value) {
+                              setState(() {
+                                isCheckPost = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: () {
+                              _updateForm(isCheckPre, isCheckPost);
+                            },
+                            child: const Text('Save Changes'),
+                          ),
+                        ],
+                      ),
+                    );
                   },
                 ),
-                SwitchListTile(
-                  title: const Text('Add new flight for Post?'),
-                  value: isCheckPost,
-                  onChanged: (bool value) {
-                    setState(() {
-                      isCheckPost = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    _updateForm(isCheckPre, isCheckPost);
-                  },
-                  child: const Text('Save Changes'),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
     );
   }
 
@@ -225,17 +234,17 @@ class _FormDetailState extends State<FormDetail> {
           for (var answer in section['answer']) {
             String questionId = answer['questionName'];
             TextEditingController controller = _questionControllers.putIfAbsent(
-                questionId, () => TextEditingController(text: answer['answer'])
-            );
+                questionId,
+                () => TextEditingController(text: answer['answer']));
             fields.add(_buildQuestionField(answer, questionId, controller));
           }
         } else {
           for (var answerInfo in section['answer']) {
             for (var data in answerInfo['data']) {
               String questionId = data['questionName'];
-              TextEditingController controller = _questionControllers.putIfAbsent(
-                  questionId, () => TextEditingController(text: data['answer'])
-              );
+              TextEditingController controller =
+                  _questionControllers.putIfAbsent(questionId,
+                      () => TextEditingController(text: data['answer']));
               fields.add(_buildQuestionField(data, questionId, controller));
             }
           }
@@ -245,9 +254,10 @@ class _FormDetailState extends State<FormDetail> {
     return fields;
   }
 
-
-  Widget _buildQuestionField(Map<String, dynamic> question, String questionId, TextEditingController controller) {
-    List<dynamic> options = List<String>.from(question['option'] ?? []); //buat ambil option dropdown & multiple (Checklist ga pake ini karena harus di trim)
+  Widget _buildQuestionField(Map<String, dynamic> question, String questionId,
+      TextEditingController controller) {
+    List<dynamic> options = List<String>.from(question['option'] ??
+        []); //buat ambil option dropdown & multiple (Checklist ga pake ini karena harus di trim)
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
@@ -257,11 +267,11 @@ class _FormDetailState extends State<FormDetail> {
           if (question['qType'] == 'text' || question['qType'] == 'longtext')
             TextFormField(
                 controller: controller,
-                decoration: InputDecoration(labelText: 'Answer')
-            ),
+                decoration: InputDecoration(labelText: 'Answer')),
           if (question['qType'] == 'checklist')
             ...question['option'].map<Widget>((option) {
-              bool isChecked = (_checkboxValues[questionId] ??= Set<String>()).contains(option);
+              bool isChecked = (_checkboxValues[questionId] ??= Set<String>())
+                  .contains(option);
               return CheckboxListTile(
                 title: Text(option),
                 value: isChecked,
@@ -273,7 +283,8 @@ class _FormDetailState extends State<FormDetail> {
                       _checkboxValues[questionId]?.remove(option);
                     }
                     // Update the controller text to match the current selection state
-                    _questionControllers[questionId]?.text = _checkboxValues[questionId]?.join(', ') ?? '';
+                    _questionControllers[questionId]?.text =
+                        _checkboxValues[questionId]?.join(', ') ?? '';
                   });
                 },
               );

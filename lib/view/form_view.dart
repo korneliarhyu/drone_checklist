@@ -1,12 +1,10 @@
 import 'package:drone_checklist/database/database_helper.dart';
-import 'package:drone_checklist/helper/utils.dart';
-import 'package:drone_checklist/model/sync_model.dart';
-import 'package:drone_checklist/view/form_detail.dart';
+import 'package:drone_checklist/view/form_fill.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/view/template_view.dart';
-import 'package:drone_checklist/view/template_select.dart';
-import 'package:drone_checklist/services/api_service.dart';
+import 'package:drone_checklist/view/template_downloaded.dart';
+
 
 int currTemplate = 1;
 
@@ -23,7 +21,7 @@ class _FormViewState extends State<FormView> {
 
   // bool confirm = false;
 
-  void _callData() async {
+  void _getAllForms() async {
     var listData = await DatabaseHelper.getAllForms();
 
     _formList = listData.map((element) {
@@ -40,7 +38,7 @@ class _FormViewState extends State<FormView> {
   @override
   void initState() {
     // TODO: implement initState
-    _callData();
+    _getAllForms();
     super.initState();
   }
 
@@ -50,10 +48,10 @@ class _FormViewState extends State<FormView> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SelectForm(),
+        builder: (context) => TemplateDownloaded(),
       ),
     );
-    _callData();
+    _getAllForms();
   }
 
   void _navigateToTemplatesList() async {
@@ -128,7 +126,7 @@ class _FormViewState extends State<FormView> {
             responseHeader: true,
           ));
 
-          var apiService = ApiService(dio);
+          // var apiService = ApiService(dio);
 
           // SyncModel sync = SyncModel(
           //     submissionName: getForm['formName'],
@@ -271,7 +269,7 @@ class _FormViewState extends State<FormView> {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => FormDetail(
+                      builder: (context) => FormFill(
                         formId: _formList[index]
                             ['formId'], // Pass the selected form ID
                       ),

@@ -166,9 +166,19 @@ class _FormCreateState extends State<FormCreate> {
       ['assessment', 'pre', 'post'].forEach((section) {
         fields.add(Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
-          // Memunculkan judul per-section
-          child: Text(section.toUpperCase(),
-              style: Theme.of(context).textTheme.headlineSmall),
+
+          //styling
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              // Memunculkan judul per-section
+              section.toUpperCase(),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold
+              ),
+            ),
+          )
+
         ));
         if (_formData[section] != null) {
           _formData[section].forEach((questionId, questionData) {
@@ -279,6 +289,7 @@ class _FormCreateState extends State<FormCreate> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
                 child: Column(
