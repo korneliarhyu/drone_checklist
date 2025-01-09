@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:drone_checklist/view/template_detail.dart';
+import 'package:drone_checklist/view/template_select.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:drone_checklist/model/json_model.dart';

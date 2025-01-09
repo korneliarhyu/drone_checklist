@@ -41,9 +41,8 @@ class _FormDetailState extends State<FormDetail> {
   }
 
   void _updateForm(bool isCheckPre, bool isCheckPost) async {
+    List<Map<String, dynamic>> updatedSections = [];
     try {
-      List<Map<String, dynamic>> updatedSections = [];
-
       _formData?.forEach((section) {
         bool isNewFlight = (section['type'] == 'pre' && isCheckPre) || (section['type'] == 'post' && isCheckPost);
 
@@ -72,10 +71,11 @@ class _FormDetailState extends State<FormDetail> {
           .map<int>((a) => a['flightNum'] as int)
           .reduce((int a, int b) => math.max(a, b)) + 1;
     }
+
     List<Map<String, dynamic>> newData = (section['answer'].last['data'] as List<dynamic>).map<Map<String, dynamic>>((data) {
       return {
         'questionName': data['questionName'],
-        'answer': _questionControllers[data['questionName']]?.text ?? '',
+        'answer': '',
         'dataChanged': DateTime.now().toString().split('.').first.replaceAll('-', '/'),
         'qType': data['qType'],
         'option': List<String>.from(data['option'] ?? [])
@@ -90,26 +90,29 @@ class _FormDetailState extends State<FormDetail> {
 
   void _updateData(Map<String, dynamic> section) {
     for (var flight in section['answer']) {
+      int flightNum = flight['flightNum'] ?? 0; //set ke 0 kalo null
+
       if (flight['data'] != null) {
         for (var data in flight['data']) {
           String questionName = data['questionName'];
-          TextEditingController? controller = _questionControllers[questionName];
-          if (controller != null) {
-            data['answer'] = controller.text;
-            data['dataChanged'] = DateTime.now().toString().split('.').first.replaceAll('-', '/');
+          String controllerKey = '$questionName-$flightNum';
+
+          if (data['qType'] == 'checklist') {
+            data['answer'] = _checkboxValues[controllerKey]?.join(', ') ?? '';
+            data['option'] = data['option'] ?? [];
+          } else{
+            TextEditingController? controller = _questionControllers[controllerKey];
+            if (controller != null) {
+              data['answer'] = controller.text;
+            }
           }
-        }
-      } else {
-        String questionName = flight['questionName'];
-        TextEditingController? controller = _questionControllers[questionName];
-        if (controller != null) {
-          flight['answer'] = controller.text;
-          flight['dataChanged'] = DateTime.now().toString();
+          data['dataChanged'] = DateTime.now().toString().split('.').first.replaceAll('-', '/');
         }
       }
     }
+    //debugging
+    print("After updateData: $section");
   }
-
 
   void _loadFormData(int formId) async {
     try {
@@ -126,18 +129,23 @@ class _FormDetailState extends State<FormDetail> {
 
       print("Parsed form data: $formData");
       // initiate buat pertanyaan type checklist agar bisa diambil jawaban dan dipassing ke text controller karna value checkbox itu tipe boolean dan bukan string
-      // _formData = formData;
+      _formData = formData;
       _formData?.forEach((section) {
         section['answer'].forEach((answer) {
           if (answer['data'] != null) {
             answer['data'].forEach((data) {
               if (data['qType'] == 'checklist') {
-                String questionId = data['questionName'];
-                List<String> selectedOptions = data['answer'].split(', ').map((item) => item.trim()).toList();
-                _checkboxValues[questionId] = Set<String>.from(selectedOptions);
-                _questionControllers[questionId] = TextEditingController(text: data['answer']);
+                String controllerKey = '${data['questionName']}-${answer['flightNum']}';
+                List<String> selectedOptions = (data['answer'] as String).split(', ').where((item) => item.isNotEmpty).toList();
+                _checkboxValues[controllerKey] = Set<String>.from(selectedOptions);
+
+                //debug
+                print("Initialized controllerKey: $controllerKey");
+                print("Checkbox values: ${_checkboxValues[controllerKey]}");
+                _questionControllers[controllerKey] = TextEditingController(text: selectedOptions.join(', '));
               } else {
-                _questionControllers[data['questionName']] = TextEditingController(text: data['answer']);
+                String controllerKey = '${data['questionName']}-${answer['flightNum']}';
+                _questionControllers[controllerKey] = TextEditingController(text: data['answer']);
               }
             });
           }
@@ -200,8 +208,9 @@ class _FormDetailState extends State<FormDetail> {
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     _updateForm(isCheckPre, isCheckPost);
+                    _loadFormData(widget.formId);
                   },
                   child: const Text('Save Changes'),
                 ),
@@ -246,9 +255,10 @@ class _FormDetailState extends State<FormDetail> {
                     const SizedBox(height: 8),
                     ...(flight['data'] as List<dynamic>).map<Widget>((data){
                       String questionId = data['questionName'];
+                      int flightNum = flight['flightNum'];
                       TextEditingController controller = _questionControllers.putIfAbsent(
-                          questionId, () => TextEditingController(text: data['answer']));
-                      return _buildQuestionField(data, questionId, controller);
+                          '$questionId-$flightNum', () => TextEditingController(text: data['answer']));
+                      return _buildQuestionField(data, questionId, controller, flightNum);
                     }).toList(),
                   ],
                 ),
@@ -267,10 +277,11 @@ class _FormDetailState extends State<FormDetail> {
                     const SizedBox(height: 8),
                     ...(section['answer'] as List<dynamic>).map<Widget>((answer) {
                       String questionId = answer['questionName'];
+                      int flightNum = 1;
                       TextEditingController controller = _questionControllers.putIfAbsent(
                         questionId, () => TextEditingController(text: answer['answer']),
                       );
-                      return _buildQuestionField(answer, questionId, controller);
+                      return _buildQuestionField(answer, questionId, controller, flightNum);
                     }).toList(),
                   ],
                 )
@@ -283,7 +294,10 @@ class _FormDetailState extends State<FormDetail> {
   }
 
 
-  Widget _buildQuestionField(Map<String, dynamic> question, String questionId, TextEditingController controller) {
+  Widget _buildQuestionField(Map<String, dynamic> question, String questionId, TextEditingController controller, int flightNum) {
+    String controllerKey = '$questionId-$flightNum';
+    controller = _questionControllers.putIfAbsent(controllerKey, () => TextEditingController(text: question['answer']));
+
     List<dynamic> options = List<String>.from(question['option'] ?? []); //buat ambil option dropdown & multiple (Checklist ga pake ini karena harus di trim)
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -291,26 +305,27 @@ class _FormDetailState extends State<FormDetail> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(question['questionName']),
-          if (question['qType'] == 'text' || question['qType'] == 'longtext')
+          if (question['qType'] == 'text')
             TextFormField(
                 controller: controller,
                 decoration: InputDecoration(labelText: 'Answer')
             ),
           if (question['qType'] == 'checklist')
             ...question['option'].map<Widget>((option) {
-              bool isChecked = (_checkboxValues[questionId] ??= Set<String>()).contains(option);
+              String controllerKey = '$questionId-$flightNum';
+              bool isChecked = (_checkboxValues[controllerKey] ??= <String>{}).contains(option);
               return CheckboxListTile(
                 title: Text(option),
                 value: isChecked,
                 onChanged: (bool? isSelected) {
                   setState(() {
                     if (isSelected ?? false) {
-                      _checkboxValues[questionId]?.add(option);
+                      _checkboxValues[controllerKey]?.add(option);
                     } else {
-                      _checkboxValues[questionId]?.remove(option);
+                      _checkboxValues[controllerKey]?.remove(option);
                     }
                     // Update the controller text to match the current selection state
-                    _questionControllers[questionId]?.text = _checkboxValues[questionId]?.join(', ') ?? '';
+                    _questionControllers[controllerKey]?.text = _checkboxValues[controllerKey]?.join(', ') ?? '';
                   });
                 },
               );
@@ -345,10 +360,10 @@ class _FormDetailState extends State<FormDetail> {
                 },
               );
             }).toList(),
-          if (question['qType'] == 'longText')
+          if (question['qType'] == 'longtext')
             TextFormField(
               maxLines: null,
-              //controller: controller,
+              controller: controller,
               decoration: InputDecoration(labelText: "Answer"),
               validator: (value) {
                 if (question['required'] && (value == null || value.isEmpty)) {
@@ -360,6 +375,7 @@ class _FormDetailState extends State<FormDetail> {
               onChanged: (value) {
                 setState(() {
                   _textboxValues[questionId] = value;
+                  controller.text = value;
                 });
               },
             ),

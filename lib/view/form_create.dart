@@ -154,19 +154,9 @@ class _FormCreateState extends State<FormCreate> {
 
     try {
       await DatabaseHelper.createForm(formModel);
-
-      //navigating to form view after saving
-      if (mounted){
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => FormView(),
-            ),
-        );
-      }
     } catch (e) {
       showAlert(context, "Form Not Saved!", "Failed save the form!!",
-          AlertType.failed);
+          AlertType.failed, () {});
     }
     print(jsonEncode(formModel.formData));
   }
@@ -315,11 +305,21 @@ class _FormCreateState extends State<FormCreate> {
                   children: _buildFormFields() +
                       [
                         ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (_formKey.currentState!.validate()) {
-                              showAlert(context, "Success",
-                                  "Success submit form!", AlertType.success);
-                              _saveForm();
+                              await showAlert(context, "Success", "Success submit form!", AlertType.success, (){
+                                _saveForm();
+
+                                //navigating to form view after saving
+                                if (mounted){
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => FormView(),
+                                    ),
+                                  );
+                                }
+                              });
                             }
                           },
                           child: const Text('Submit Form'),
