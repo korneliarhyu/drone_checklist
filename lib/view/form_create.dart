@@ -166,29 +166,45 @@ class _FormCreateState extends State<FormCreate> {
 
     if (_formData != null) {
       ['pre', 'post', 'assessment'].forEach((section) {
-        fields.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          // Memunculkan judul per-section
-          child: Text(section.toUpperCase(),
-              style: Theme.of(context).textTheme.headlineLarge),
-        ));
-        if (_formData[section] != null) {
-          _formData[section].forEach((questionId, questionData) {
-            // memberikan unique Key ke masing-masing question di setiap section
-            // section = assessment, pre, post.
-            String uniqueQuestionId = '$section-$questionId';
+        if (_formData![section] != null){
+          fields.add(Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            // Memunculkan judul per-section
+            child: Text(
+                section.toUpperCase(),
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .headlineLarge
+            ),
+          ));
 
-            // Text Editing Controller ini bikin nilai text ngga hilang saat click field lainnya.
-            TextEditingController? controller =
-                _questionControllers[uniqueQuestionId];
-            if (controller != null) {
-              fields.add(_buildQuestionField(
-                  uniqueQuestionId, questionData, controller));
-            }
-          });
+          fields.add(Card(
+            elevation: 3,
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _formData[section].entries.map<Widget>((entry) {
+                  // memberikan unique Key ke masing-masing question di setiap section
+                  // section = assessment, pre, post.
+                  String uniqueQuestionId = '$section-${entry.key}';
+                  Map<String, dynamic> questionData = entry.value;
+                  // Text Editing Controller ini bikin nilai text ngga hilang saat click field lainnya.
+                  TextEditingController? controller = _questionControllers[uniqueQuestionId];
+                  if (controller != null) {
+                    return _buildQuestionField(uniqueQuestionId, questionData, controller);
+                  }
+                  return SizedBox.shrink();
+                }).toList(),
+              ),
+            ),
+          ));
         }
       });
     }
+
     return fields;
   }
 
@@ -299,33 +315,37 @@ class _FormCreateState extends State<FormCreate> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: _buildFormFields() +
-                      [
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (_formKey.currentState!.validate()) {
-                              await showAlert(context, "Success", "Success submit form!", AlertType.success, (){
-                                _saveForm();
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: _buildFormFields() +
+                        [
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (_formKey.currentState!.validate()) {
+                                await showAlert(context, "Success", "Success submit form!", AlertType.success, (){
+                                  _saveForm();
 
-                                //navigating to form view after saving
-                                if (mounted){
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => FormView(),
-                                    ),
-                                  );
-                                }
-                              });
-                            }
-                          },
-                          child: const Text('Submit Form'),
-                        )
-                      ],
-                ),
+                                  //navigating to form view after saving
+                                  if (mounted){
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => FormView(),
+                                      ),
+                                    );
+                                  }
+                                });
+                              }
+                            },
+                            child: const Text('Submit Form'),
+                          )
+                        ],
+                  ),
+              )
+
               ),
             ),
     );
