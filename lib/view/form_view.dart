@@ -310,11 +310,13 @@ class _FormViewState extends State<FormView> {
                     onChanged: _formList[index]['syncStatus'] == 1
                         ? null //disabling checkbox for synced forms
                         : (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          selectedFormIndex = _formList[index]['formId']; // Pilih form ini
-                        }
-                      });
+                          setState(() {
+                            if (value == true) {
+                              selectedFormIndex = _formList[index]['formId']; // Pilih form ini
+                            } else {
+                              selectedFormIndex = null;
+                            }
+                          });
                     },
                   ),
                 ],

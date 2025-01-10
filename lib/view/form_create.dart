@@ -80,6 +80,17 @@ class _FormCreateState extends State<FormCreate> {
           _questionType[uniqueQuestionId] = questionData['type'];
           _questionOptions[uniqueQuestionId] =
               List<String>.from(questionData['option'] ?? []);
+
+          //initialize default value supaya field kosong ga ilang
+          if (questionData['type'] == 'text' || questionData['type'] == 'longtext'){
+            _textboxValues[uniqueQuestionId] = '';
+          } else if (questionData['type'] == 'dropdown'){
+            _dropdownValues[uniqueQuestionId] = '';
+          } else if (questionData['type'] == 'multiple'){
+            _multipleValues[uniqueQuestionId] = '';
+          } else if (questionData['type'] == 'checklist'){
+            _checkboxValues[uniqueQuestionId] = {};
+          }
         });
       }
     });
@@ -232,57 +243,98 @@ class _FormCreateState extends State<FormCreate> {
                 });
               },
             ),
+
           if (question['type'] == 'checklist')
-            ...question['option'].map<Widget>((option) {
-              return CheckboxListTile(
-                title: Text(option),
-                value: _checkboxValues[uniqueQuestionId]?.contains(option) ??
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                //validasi
+                if(question['required'] && (_checkboxValues[uniqueQuestionId]?.isEmpty ?? true))
+                  Text(
+                    'Please select at least one option',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ...question['option'].map<Widget>((option) {
+                  return CheckboxListTile(
+                    title: Text(option),
+                    value: _checkboxValues[uniqueQuestionId]?.contains(option) ??
                     false,
-                onChanged: (bool? isSelected) {
-                  setState(() {
-                    // perbarui dengan nilai baru
-                    if (isSelected ?? false) {
-                      if (!_checkboxValues.containsKey(uniqueQuestionId)) {
-                        _checkboxValues[uniqueQuestionId] = {option};
-                      } else {
-                        _checkboxValues[uniqueQuestionId]?.add(option);
-                      }
-                    } else {
-                      _checkboxValues[uniqueQuestionId]?.remove(option);
-                    }
-                  });
-                },
-              );
-            }).toList(),
-          if (question['type'] == 'dropdown')
-            DropdownButtonFormField<String>(
-              value: _dropdownValues[uniqueQuestionId],
-              onChanged: (String? newValue) {
-                setState(() {
-                  _dropdownValues[uniqueQuestionId] = newValue ?? "";
-                });
-              },
-              items: question['option'].map<DropdownMenuItem<String>>((option) {
-                return DropdownMenuItem<String>(
-                  value: option,
-                  child: Text(option),
-                );
-              }).toList(),
-              decoration: InputDecoration(labelText: 'Select one'),
+                    onChanged: (bool? isSelected) {
+                      setState(() {
+                        // perbarui dengan nilai baru
+                        if (isSelected ?? false) {
+                          if (!_checkboxValues.containsKey(uniqueQuestionId)) {
+                            _checkboxValues[uniqueQuestionId] = {option};
+                          } else {
+                            _checkboxValues[uniqueQuestionId]?.add(option);
+                          }
+                        } else {
+                          _checkboxValues[uniqueQuestionId]?.remove(option);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ],
             ),
-          if (question['type'] == 'multiple')
-            ...question['option'].map<Widget>((option) {
-              return RadioListTile<String>(
-                title: Text(option),
-                value: option,
-                groupValue: _multipleValues[uniqueQuestionId],
-                onChanged: (String? value) {
-                  setState(() {
-                    _multipleValues[uniqueQuestionId] = value ?? "";
-                  });
-                },
-              );
-            }).toList(),
+
+          if (question['type'] == 'dropdown')
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if(question['required'] && (_dropdownValues[uniqueQuestionId]?.isEmpty ?? true))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Please select an option',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                    DropdownButtonFormField<String>(
+                      value: _dropdownValues[uniqueQuestionId],
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _dropdownValues[uniqueQuestionId] = newValue ?? "";
+                        });
+                      },
+                      items: question['option'].map<DropdownMenuItem<String>>((option) {
+                        return DropdownMenuItem<String>(
+                          value: option,
+                          child: Text(option),
+                        );
+                      }).toList(),
+                      decoration: InputDecoration(labelText: 'Select one'),
+                    ),
+              ],
+            ),
+
+            if (question['type'] == 'multiple')
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if(question['required'] && (_multipleValues[uniqueQuestionId]?.isEmpty ?? true))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Please select an option',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                ...question['option'].map<Widget>((option){
+                  return RadioListTile<String>(
+                      title: Text(option),
+                      value: option,
+                      groupValue: _multipleValues[uniqueQuestionId],
+                      onChanged: (String? value){
+                        setState(() {
+                          _multipleValues[uniqueQuestionId] = value ?? "";
+                        });
+                      },
+                  );
+                }).toList(),
+              ],
+            ),
+
           if (question['type'] == 'longtext')
             TextFormField(
               maxLines: null,
