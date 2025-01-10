@@ -2,14 +2,14 @@ import 'package:drone_checklist/database/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'form_create.dart';
 
-class SelectForm extends StatefulWidget {
-  const SelectForm({super.key});
+class TemplateDownloaded extends StatefulWidget {
+  const TemplateDownloaded({super.key});
 
   @override
-  _SelectFormState createState() => _SelectFormState();
+  _TemplateDownloadedState createState() => _TemplateDownloadedState();
 }
 
-class _SelectFormState extends State<SelectForm> {
+class _TemplateDownloadedState extends State<TemplateDownloaded> {
 
   late Future<List<Map<String, dynamic>>> _templatesFuture;
 

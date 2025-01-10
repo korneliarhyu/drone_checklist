@@ -3,15 +3,15 @@ import 'package:drone_checklist/database/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-class FormDetail extends StatefulWidget {
+class FormFill extends StatefulWidget {
   final int formId;
-  const FormDetail({Key? key, required this.formId}) : super(key: key);
+  const FormFill({Key? key, required this.formId}) : super(key: key);
 
   @override
-  _FormDetailState createState() => _FormDetailState();
+  _FormFillState createState() => _FormFillState();
 }
 
-class _FormDetailState extends State<FormDetail> {
+class _FormFillState extends State<FormFill> {
   Map<String, TextEditingController> _questionControllers = {};
   final Map<String, String> _dropdownValues = {}; //dropdown
   final Map<String, String> _multipleValues = {}; //radio
@@ -176,17 +176,17 @@ class _FormDetailState extends State<FormDetail> {
           : Builder(
         builder: (context) {
           return Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: ListView(
               children: [
-                Text(
-                  _formName?['formName'] ?? 'Untitled Form',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 20),
+                // Text(
+                //   _formName?['formName'] ?? 'Untitled Form',
+                //   style: const TextStyle(
+                //     fontSize: 22,
+                //     fontWeight: FontWeight.bold,
+                //   ),
+                // ),
+                //const SizedBox(height: 20),
                 ..._buildFormFields(),
                 SwitchListTile(
                   title: const Text('Add new flight for Pre?'),

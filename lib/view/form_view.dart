@@ -1,12 +1,10 @@
 import 'package:drone_checklist/database/database_helper.dart';
-import 'package:drone_checklist/view/fill_form.dart';
+import 'package:drone_checklist/view/form_fill.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/view/template_view.dart';
 import 'package:drone_checklist/view/template_downloaded.dart';
 import 'package:drone_checklist/services/api_service.dart';
-
-int currTemplate = 1;
 
 class FormView extends StatefulWidget {
   @override
@@ -49,7 +47,7 @@ class _FormViewState extends State<FormView> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SelectForm(),
+        builder: (context) => TemplateDownloaded(),
       ),
     );
     _callData();
@@ -96,7 +94,7 @@ class _FormViewState extends State<FormView> {
             return AlertDialog(
               title: const Text("Confirm Sync"),
               content:
-                  const Text("Are you sure you want to sync selected forms?"),
+                  const Text("Are you sure you want to sync selected form?"),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -284,7 +282,7 @@ class _FormViewState extends State<FormView> {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => FormDetail(
+                  builder: (context) => FormFill(
                     formId: _formList[index]['formId'], // Pass the selected form ID
                   ),
                 ),

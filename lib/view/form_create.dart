@@ -165,12 +165,12 @@ class _FormCreateState extends State<FormCreate> {
     List<Widget> fields = [];
 
     if (_formData != null) {
-      ['assessment', 'pre', 'post'].forEach((section) {
+      ['pre', 'post', 'assessment'].forEach((section) {
         fields.add(Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           // Memunculkan judul per-section
           child: Text(section.toUpperCase(),
-              style: Theme.of(context).textTheme.headlineSmall),
+              style: Theme.of(context).textTheme.headlineLarge),
         ));
         if (_formData[section] != null) {
           _formData[section].forEach((questionId, questionData) {

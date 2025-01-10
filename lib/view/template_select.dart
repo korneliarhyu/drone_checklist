@@ -5,19 +5,19 @@ import 'package:drone_checklist/helper/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/services/api_service.dart';
 
-class TemplateDetail extends StatefulWidget {
+class TemplateSelect extends StatefulWidget {
   final int templateId;
 
-  const TemplateDetail({
+  const TemplateSelect({
     Key? key,
     required this.templateId,
   }) : super(key: key);
 
   @override
-  _TemplateDetailState createState() => _TemplateDetailState();
+  _TemplateSelectState createState() => _TemplateSelectState();
 }
 
-class _TemplateDetailState extends State<TemplateDetail> {
+class _TemplateSelectState extends State<TemplateSelect> {
   // menggunakan late supaya program menunggu sampai database benar-benar siap untuk fetch template form.
   late Map<String, dynamic> _templateData = {};
   late bool _isLoading = true;
@@ -115,7 +115,7 @@ class _TemplateDetailState extends State<TemplateDetail> {
           : _templateData.isEmpty
             ? const Center(child: Text('No template data available'))
             : ListView(
-              padding: const EdgeInsets.only(bottom: 85.0),
+              padding: const EdgeInsets.only(bottom: 85),
               children: [
                 if (_templateData['assessment'] != null &&
                     _templateData['pre'] != null &&

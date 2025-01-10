@@ -69,7 +69,7 @@ class TemplateView extends StatelessWidget {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => TemplateDetail(
+                                builder: (context) => TemplateSelect(
                                       templateId: template.id,
                                     )));
                         // Handle navigation or further actions
