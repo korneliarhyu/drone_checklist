@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:drone_checklist/view/template_detail.dart';
+import 'package:drone_checklist/view/template_select.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:drone_checklist/model/json_model.dart';
@@ -24,10 +24,31 @@ class TemplateView extends StatelessWidget {
       } else {
         throw Exception("No data received from the server");
       }
+    } on DioException catch (dioError){
+      String errorMessage = _handleDioError(dioError);
+      print("Error fetching templates: $errorMessage");
+      throw Exception(errorMessage);
     } catch (e, s) {
       print("Error fetching templates: $e");
       print("stacktrace: $s");
-      rethrow;
+      throw Exception("An unexpected error occured");
+    }
+  }
+
+  String _handleDioError(DioException error){
+    switch (error.type){
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.sendTimeout:
+        return "Connection timed out. Please check your internet connection.";
+      case DioExceptionType.badResponse:
+        return "Server error: ${error.response?.statusCode}. Please try again later.";
+      case DioExceptionType.cancel:
+        return "Request was cancelled.";
+      case DioExceptionType.unknown:
+        return "No connection available. Please check your network.";
+      default:
+        return "An unexpected error occured.";
     }
   }
 
@@ -69,7 +90,7 @@ class TemplateView extends StatelessWidget {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => TemplateDetail(
+                                builder: (context) => TemplateSelect(
                                       templateId: template.id,
                                     )));
                         // Handle navigation or further actions

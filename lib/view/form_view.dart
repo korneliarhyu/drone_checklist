@@ -1,14 +1,10 @@
 import 'package:drone_checklist/database/database_helper.dart';
-import 'package:drone_checklist/helper/utils.dart';
-import 'package:drone_checklist/model/sync_model.dart';
-import 'package:drone_checklist/view/form_detail.dart';
+import 'package:drone_checklist/view/form_fill.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/view/template_view.dart';
-import 'package:drone_checklist/view/template_select.dart';
+import 'package:drone_checklist/view/template_downloaded.dart';
 import 'package:drone_checklist/services/api_service.dart';
-
-int currTemplate = 1;
 
 class FormView extends StatefulWidget {
   @override
@@ -31,6 +27,7 @@ class _FormViewState extends State<FormView> {
         'formId': element['formId'],
         'formName': element['formName'],
         'isChecked': false,
+        'syncStatus': element['syncStatus'],
       };
     }).toList();
 
@@ -50,7 +47,7 @@ class _FormViewState extends State<FormView> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SelectForm(),
+        builder: (context) => TemplateDownloaded(),
       ),
     );
     _callData();
@@ -97,7 +94,7 @@ class _FormViewState extends State<FormView> {
             return AlertDialog(
               title: const Text("Confirm Sync"),
               content:
-                  const Text("Are you sure you want to sync selected forms?"),
+                  const Text("Are you sure you want to sync selected form?"),
               actions: <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -130,13 +127,6 @@ class _FormViewState extends State<FormView> {
 
           var apiService = ApiService(dio);
 
-          // SyncModel sync = SyncModel(
-          //     submissionName: getForm['formName'],
-          //     templateId: serverTemplateId,
-          //     submittedBy: 'User',
-          //     submittedDate: DateTime.now(),
-          //     formData: getForm['formData']);
-
           FormData sync = FormData.fromMap({
             "submissionName": getForm['formName'].toString(),
             "templateId": getForm['serverTemplateId'].toString(),
@@ -151,6 +141,15 @@ class _FormViewState extends State<FormView> {
           );
 
           print("response result : $response");
+
+          //update syncStatus in DB
+          await DatabaseHelper.updateSyncStatus(selectedForm, 1);
+
+          //update UI
+          setState(() {
+            _formList.firstWhere((form) => form['formId'] == selectedForm)['syncStatus'] =1;
+            selectedFormIndex = null;
+          });
 
           showDialog(
             context: context,
@@ -170,8 +169,6 @@ class _FormViewState extends State<FormView> {
             },
           );
 
-          // Mengubah syncStatus menjadi 1 = sudah ter Sync.
-          DatabaseHelper.updateSyncStatus(selectedForm, 1);
         } catch (e) {
           showDialog(
             context: context,
@@ -247,72 +244,87 @@ class _FormViewState extends State<FormView> {
           ),
         ),
       ]),
-      body: _formList.isEmpty
-          ? const Center(
-              child: Text(
-                "No Form Available Yet :(",
-                style: TextStyle(fontSize: 18),
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 85),
+        child: _formList.isEmpty
+            ? const Center(
+          child: Text(
+            "No Form Available Yet :(",
+            style: TextStyle(fontSize: 18),
+          ),
+        )
+            : ListView.builder(
+          itemCount: _formList.length,
+          itemBuilder: (context, index) => Card(
+            margin: const EdgeInsets.all(15),
+            child: ListTile(
+              leading: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 8,
+                    backgroundColor: _formList[index]['syncStatus'] == 1
+                        ? Colors.green
+                        : Colors.red,
+                  ),
+                  const SizedBox(width: 10),
+                  const Icon(Icons.description, color: Colors.blue),
+                ],
               ),
-            )
-          : ListView.builder(
-              itemCount: _formList.length,
-              itemBuilder: (context, index) => Card(
-                margin: const EdgeInsets.all(15),
-                child: ListTile(
-                  leading: const Icon(Icons.description, color: Colors.blue),
-                  title: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: Text(
-                      _formList[index]['formName'],
-                      style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FormDetail(
-                        formId: _formList[index]
-                            ['formId'], // Pass the selected form ID
-                      ),
-                    ),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        onPressed: () async {
-                          int formId = _formList[index]['formId'];
-                          await DatabaseHelper.deleteForm(formId);
-                          setState(() {
-                            _formList.removeAt(index);
-                          });
-                        },
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.redAccent,
-                        ),
-                      ),
-                      Checkbox(
-                        // karena _formList adalah growableList, jadi kita akan akses listnya dulu untuk dapetin form ke berapa yang kita pilih(berdasarkan indexnya).
-                        // kemudian kita akses ['formId']nya (formId ini yang kita butuhkan untuk proses syncData).
-                        value: selectedFormIndex == _formList[index]['formId'],
-                        onChanged: (bool? value) {
-                          setState(() {
-                            if (value == true) {
-                              selectedFormIndex =
-                                  _formList[index]['formId']; // Pilih form ini
-                            } else {
-                              selectedFormIndex = null; // Hapus pilihan
-                            }
-                          });
-                        },
-                      ),
-                    ],
+              title: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Text(
+                  _formList[index]['formName'],
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FormFill(
+                    formId: _formList[index]['formId'], // Pass the selected form ID
                   ),
                 ),
               ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () async {
+                      int formId = _formList[index]['formId'];
+                      await DatabaseHelper.deleteForm(formId);
+                      setState(() {
+                        _formList.removeAt(index);
+                      });
+                    },
+                    icon: const Icon(
+                      Icons.delete,
+                      color: Colors.redAccent,
+                    ),
+                  ),
+                  Checkbox(
+                    // karena _formList adalah growableList, jadi kita akan akses listnya dulu untuk dapetin form ke berapa yang kita pilih(berdasarkan indexnya).
+                    // kemudian kita akses ['formId']nya (formId ini yang kita butuhkan untuk proses syncData).
+                    value: selectedFormIndex == _formList[index]['formId'],
+                    onChanged: _formList[index]['syncStatus'] == 1
+                        ? null //disabling checkbox for synced forms
+                        : (bool? value) {
+                          setState(() {
+                            if (value == true) {
+                              selectedFormIndex = _formList[index]['formId']; // Pilih form ini
+                            } else {
+                              selectedFormIndex = null;
+                            }
+                          });
+                    },
+                  ),
+                ],
+              ),
             ),
+          ),
+        ),
+      )
     );
   }
 }
