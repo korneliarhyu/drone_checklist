@@ -210,6 +210,14 @@ class _FormFillState extends State<FormFill> {
                 ElevatedButton(
                   onPressed: () async {
                     _updateForm(isCheckPre, isCheckPost);
+
+                    //set switchnya jadi mati lagi
+                    setState(() {
+                      isCheckPre = false;
+                      isCheckPost = false;
+                    });
+
+                    //load ulang data
                     _loadFormData(widget.formId);
                   },
                   child: const Text('Save Changes'),
