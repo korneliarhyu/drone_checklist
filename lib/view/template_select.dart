@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:drone_checklist/database/database_helper.dart';
 import 'package:drone_checklist/helper/utils.dart';
+import 'package:drone_checklist/model/template_model.dart';
 import 'package:flutter/material.dart';
 import 'package:drone_checklist/services/api_service.dart';
 
@@ -63,29 +64,53 @@ class _TemplateSelectState extends State<TemplateSelect> {
     try {
       await _loadTemplateData(templateId);
 
+      // if (_templateData.isEmpty) {
+      //   print("Template data is empty or not found");
+      //   return false;
+      // } else {
+      //   String serializeForm = json.encode({
+      //     'assessment': _templateData['assessment'],
+      //     'pre': _templateData['pre'],
+      //     'post': _templateData['post']
+      //   });
+      //
+      //   // Jika data tidak kosong, mapping seluruh data dari state _templateData.
+      //   // Key: String, Value: dynamic.
+      //   Map<String, dynamic> templateData = {
+      //     // 'nama data dari model' : servis yang memiliki return dari API ['nama json'],
+      //     'serverTemplateId': _templateData['id'],
+      //     'templateName': _templateData['templateName'],
+      //     'formType': 'assessment-pre-post',
+      //     'updatedDate': DateTime.now().toString(),
+      //     'templateFormData': serializeForm,
+      //     'deletedAt': null,
+      //   };
+
       if (_templateData.isEmpty) {
         print("Template data is empty or not found");
         return false;
       } else {
-        String serializeForm = json.encode({
+        Map<String, dynamic> templateFormData = {
           'assessment': _templateData['assessment'],
           'pre': _templateData['pre'],
           'post': _templateData['post']
-        });
-
-        // Jika data tidak kosong, mapping seluruh data dari state _templateData.
-        // Key: String, Value: dynamic.
-        Map<String, dynamic> templateData = {
-          // 'nama data dari model' : servis yang memiliki return dari API ['nama json'],
-          'serverTemplateId': _templateData['id'],
-          'templateName': _templateData['templateName'],
-          'formType': 'assessment-pre-post',
-          'updatedDate': DateTime.now().toString(),
-          'templateFormData': serializeForm,
-          'deletedAt': null,
         };
 
-        DatabaseHelper.insertTemplate(templateData);
+        final templateModel = TemplateModel(
+            templateId: null,
+            serverTemplateId: _templateData['id'],
+            templateName: _templateData['templateName'],
+            formType: 'assessment-pre-post',
+            updatedDate: DateTime.now(),
+            templateFormData: templateFormData,
+            deletedAt: null
+        );
+
+
+        // DatabaseHelper.insertTemplate(templateData as TemplateModel);
+
+        DatabaseHelper.insertTemplate(templateModel);
+
 
         //alert success
         showAlert(
@@ -113,18 +138,18 @@ class _TemplateSelectState extends State<TemplateSelect> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _templateData.isEmpty
-            ? const Center(child: Text('No template data available'))
-            : ListView(
-              padding: const EdgeInsets.only(bottom: 85),
-              children: [
-                if (_templateData['assessment'] != null &&
-                    _templateData['pre'] != null &&
-                    _templateData['post'] != null)
-                  _buildSection('Assessment', _templateData),
-                _buildSection('Pre-Check', _templateData),
-                _buildSection('Post-Check', _templateData),
-              ],
-            ),
+          ? const Center(child: Text('No template data available'))
+          : ListView(
+        padding: const EdgeInsets.only(bottom: 85),
+        children: [
+          if (_templateData['assessment'] != null &&
+              _templateData['pre'] != null &&
+              _templateData['post'] != null)
+            _buildSection('Assessment', _templateData),
+          _buildSection('Pre-Check', _templateData),
+          _buildSection('Post-Check', _templateData),
+        ],
+      ),
       floatingActionButton: Stack(
         children: [
           Positioned(
@@ -230,10 +255,10 @@ class _TemplateSelectState extends State<TemplateSelect> {
             value: false,
             onChanged: null,
             title: Text(
-              option,
-              style: const TextStyle(
-                color: Colors.black,
-              )
+                option,
+                style: const TextStyle(
+                  color: Colors.black,
+                )
             ),
           );
         }).toList(),
@@ -245,21 +270,21 @@ class _TemplateSelectState extends State<TemplateSelect> {
     return ListTile(
       title: Text(question['question']),
       subtitle: Padding(
-        padding: const EdgeInsets.only(top: 8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Enter your answer',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              height: 1,
-              color: Colors.grey,
-            )
-          ],
-        )
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Enter your answer',
+                style: const TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                height: 1,
+                color: Colors.grey,
+              )
+            ],
+          )
       ),
     );
   }
@@ -276,7 +301,7 @@ class _TemplateSelectState extends State<TemplateSelect> {
             title: Text(
               option.toString(),
               style: TextStyle(
-                color: Colors.black
+                  color: Colors.black
               ),
             ),
           );
@@ -289,20 +314,20 @@ class _TemplateSelectState extends State<TemplateSelect> {
     return ListTile(
       title: Text(question['question']),
       subtitle: Padding(
-        padding: const EdgeInsets.only(top: 8.0),
+          padding: const EdgeInsets.only(top: 8.0),
           child: Container(
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            height: 80.0,
-            child: SingleChildScrollView(
-              child: Text(
-                'Enter your answer',
-                style: TextStyle(color: Colors.grey),
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              height: 80.0,
+              child: SingleChildScrollView(
+                  child: Text(
+                    'Enter your answer',
+                    style: TextStyle(color: Colors.grey),
+                  )
               )
-            )
           )),
     );
   }

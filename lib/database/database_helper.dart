@@ -1,4 +1,5 @@
 import 'package:drone_checklist/model/form_model.dart';
+import 'package:drone_checklist/model/template_model.dart';
 import 'package:sqflite/sqflite.dart' as sqlite;
 import 'dart:convert';
 
@@ -29,18 +30,8 @@ class DatabaseHelper {
       formData TEXT,
       updatedFormData TEXT,
       syncStatus INTEGER DEFAULT 0,
-      deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP      
-      )
-    ''');
-
-    await database.execute('''CREATE TABLE dummy_template(
-      templateId INTEGER PRIMARY KEY AUTOINCREMENT,
-      templateName TEXT,
-      formType TEXT,
-      updatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      templateFormData TEXT,
       deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
+      )
     ''');
   }
 
@@ -61,8 +52,7 @@ class DatabaseHelper {
   static Future<void> updateSyncStatus(int formId, int syncStatus) async {
     final db = await DatabaseHelper.db();
 
-    await db.update(
-        'form', {'syncStatus': syncStatus},
+    await db.update('form', {'syncStatus': syncStatus},
         where: 'formId = ?', whereArgs: [formId]);
   }
 
@@ -125,12 +115,32 @@ class DatabaseHelper {
     }
   }
 
-  static Future<int> insertTemplate(Map<String, dynamic> templateData) async {
+  // static Future<int> insertTemplate(Map<String, dynamic> templateData) async {
+  //   final db = await DatabaseHelper.db();
+  //   return await db.insert("template", templateData);
+  // }
+
+  static Future<int> insertTemplate(TemplateModel model) async {
     final db = await DatabaseHelper.db();
-    return await db.insert("template", templateData);
+
+    final template = {
+      'serverTemplateId': model.serverTemplateId,
+      'templateName': model.templateName,
+      'formType': model.formType,
+      'templateFormData': json.encode(model.templateFormData),
+      'deletedAt': null
+    };
+
+    final templateId = await db.insert('template', template);
+    final listTemplate = await db.query("template");
+    for (var element in listTemplate) {
+      print(element);
+    }
+
+    return templateId;
   }
 
-  static Future<List<Map<String, dynamic>>> getAllForms() async{
+  static Future<List<Map<String, dynamic>>> getAllForms() async {
     final db = await DatabaseHelper.db();
     return db.query("form", orderBy: "formId");
   }
