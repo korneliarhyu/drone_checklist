@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 
 enum AlertType { success, failed }
 
-void showAlert(
-    BuildContext context, String title, String message, AlertType type) {
+Future<void> showAlert(
+    BuildContext context,
+    String title,
+    String message,
+    AlertType type,
+    VoidCallback onOkPressed) {
   Color bgColor = Colors.lightGreen;
   if (type == AlertType.failed) {
     bgColor = Colors.redAccent;
@@ -11,7 +15,7 @@ void showAlert(
     bgColor = Colors.greenAccent;
   }
 
-  showDialog(
+  return showDialog<void>(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
@@ -20,7 +24,12 @@ void showAlert(
         backgroundColor: bgColor,
         actions: <Widget>[
           TextButton(
-              onPressed: () => Navigator.of(context).pop(), child: Text("OK")),
+              onPressed: () {
+                Navigator.of(context).pop();
+                onOkPressed();
+              },
+              child: const Text("OK"),
+          ),
         ],
       );
     },

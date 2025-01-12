@@ -34,7 +34,7 @@ class _TemplateDownloadedState extends State<TemplateDownloaded> {
 
   @override
   Widget build(BuildContext context) {
-    const String appTitle = 'Select downloaded template';
+    const String appTitle = 'Template Downloaded';
     return Scaffold(
         appBar: AppBar(
           title: const Text(appTitle),

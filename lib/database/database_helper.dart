@@ -30,7 +30,7 @@ class DatabaseHelper {
       formData TEXT,
       updatedFormData TEXT,
       syncStatus INTEGER DEFAULT 0,
-      deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP      
+      deletedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     ''');
   }
@@ -52,8 +52,7 @@ class DatabaseHelper {
   static Future<void> updateSyncStatus(int formId, int syncStatus) async {
     final db = await DatabaseHelper.db();
 
-    await db.update(
-        'form', {'syncStatus': syncStatus},
+    await db.update('form', {'syncStatus': syncStatus},
         where: 'formId = ?', whereArgs: [formId]);
   }
 
@@ -127,9 +126,9 @@ class DatabaseHelper {
     final template = {
       'serverTemplateId': model.serverTemplateId,
       'templateName': model.templateName,
-      'formType' : model.formType,
-      'templateFormData' : json.encode(model.templateFormData),
-      'deletedAt' : null
+      'formType': model.formType,
+      'templateFormData': json.encode(model.templateFormData),
+      'deletedAt': null
     };
 
     final templateId = await db.insert('template', template);
@@ -141,7 +140,7 @@ class DatabaseHelper {
     return templateId;
   }
 
-  static Future<List<Map<String, dynamic>>> getAllForms() async{
+  static Future<List<Map<String, dynamic>>> getAllForms() async {
     final db = await DatabaseHelper.db();
     return db.query("form", orderBy: "formId");
   }

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:drone_checklist/model/form_model.dart';
 import 'package:drone_checklist/Database/database_helper.dart';
 
+import 'form_view.dart';
+
 class FormCreate extends StatefulWidget {
   final int templateId;
 
@@ -78,6 +80,17 @@ class _FormCreateState extends State<FormCreate> {
           _questionType[uniqueQuestionId] = questionData['type'];
           _questionOptions[uniqueQuestionId] =
               List<String>.from(questionData['option'] ?? []);
+
+          //initialize default value supaya field kosong ga ilang
+          if (questionData['type'] == 'text' || questionData['type'] == 'longtext'){
+            _textboxValues[uniqueQuestionId] = '';
+          } else if (questionData['type'] == 'dropdown'){
+            _dropdownValues[uniqueQuestionId] = '';
+          } else if (questionData['type'] == 'multiple'){
+            _multipleValues[uniqueQuestionId] = '';
+          } else if (questionData['type'] == 'checklist'){
+            _checkboxValues[uniqueQuestionId] = {};
+          }
         });
       }
     });
@@ -154,7 +167,7 @@ class _FormCreateState extends State<FormCreate> {
       await DatabaseHelper.createForm(formModel);
     } catch (e) {
       showAlert(context, "Form Not Saved!", "Failed save the form!!",
-          AlertType.failed);
+          AlertType.failed, () {});
     }
     print(jsonEncode(formModel.formData));
   }
@@ -163,40 +176,46 @@ class _FormCreateState extends State<FormCreate> {
     List<Widget> fields = [];
 
     if (_formData != null) {
-      ['assessment', 'pre', 'post'].forEach((section) {
-        fields.add(Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-
-          //styling
-          child: Align(
-            alignment: Alignment.centerLeft,
+      ['pre', 'post', 'assessment'].forEach((section) {
+        if (_formData![section] != null){
+          fields.add(Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            // Memunculkan judul per-section
             child: Text(
-              // Memunculkan judul per-section
-              section.toUpperCase(),
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold
+                section.toUpperCase(),
+                style: Theme
+                    .of(context)
+                    .textTheme
+                    .headlineLarge
+            ),
+          ));
+
+          fields.add(Card(
+            elevation: 3,
+            margin: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _formData[section].entries.map<Widget>((entry) {
+                  // memberikan unique Key ke masing-masing question di setiap section
+                  // section = assessment, pre, post.
+                  String uniqueQuestionId = '$section-${entry.key}';
+                  Map<String, dynamic> questionData = entry.value;
+                  // Text Editing Controller ini bikin nilai text ngga hilang saat click field lainnya.
+                  TextEditingController? controller = _questionControllers[uniqueQuestionId];
+                  if (controller != null) {
+                    return _buildQuestionField(uniqueQuestionId, questionData, controller);
+                  }
+                  return SizedBox.shrink();
+                }).toList(),
               ),
             ),
-          )
-
-        ));
-        if (_formData[section] != null) {
-          _formData[section].forEach((questionId, questionData) {
-            // memberikan unique Key ke masing-masing question di setiap section
-            // section = assessment, pre, post.
-            String uniqueQuestionId = '$section-$questionId';
-
-            // Text Editing Controller ini bikin nilai text ngga hilang saat click field lainnya.
-            TextEditingController? controller =
-                _questionControllers[uniqueQuestionId];
-            if (controller != null) {
-              fields.add(_buildQuestionField(
-                  uniqueQuestionId, questionData, controller));
-            }
-          });
+          ));
         }
       });
     }
+
     return fields;
   }
 
@@ -208,7 +227,7 @@ class _FormCreateState extends State<FormCreate> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(question['question']),
-          if (question['type'] == 'text' || question['type'] == 'longtext')
+          if (question['type'] == 'text')
             TextFormField(
               controller: controller,
               decoration: InputDecoration(labelText: "Answer"),
@@ -224,57 +243,116 @@ class _FormCreateState extends State<FormCreate> {
                 });
               },
             ),
+
           if (question['type'] == 'checklist')
-            ...question['option'].map<Widget>((option) {
-              return CheckboxListTile(
-                title: Text(option),
-                value: _checkboxValues[uniqueQuestionId]?.contains(option) ??
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                //validasi
+                if(question['required'] && (_checkboxValues[uniqueQuestionId]?.isEmpty ?? true))
+                  Text(
+                    'Please select at least one option',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ...question['option'].map<Widget>((option) {
+                  return CheckboxListTile(
+                    title: Text(option),
+                    value: _checkboxValues[uniqueQuestionId]?.contains(option) ??
                     false,
-                onChanged: (bool? isSelected) {
-                  setState(() {
-                    // perbarui dengan nilai baru
-                    if (isSelected ?? false) {
-                      if (!_checkboxValues.containsKey(uniqueQuestionId)) {
-                        _checkboxValues[uniqueQuestionId] = {option};
-                      } else {
-                        _checkboxValues[uniqueQuestionId]?.add(option);
-                      }
-                    } else {
-                      _checkboxValues[uniqueQuestionId]?.remove(option);
-                    }
-                  });
-                },
-              );
-            }).toList(),
+                    onChanged: (bool? isSelected) {
+                      setState(() {
+                        // perbarui dengan nilai baru
+                        if (isSelected ?? false) {
+                          if (!_checkboxValues.containsKey(uniqueQuestionId)) {
+                            _checkboxValues[uniqueQuestionId] = {option};
+                          } else {
+                            _checkboxValues[uniqueQuestionId]?.add(option);
+                          }
+                        } else {
+                          _checkboxValues[uniqueQuestionId]?.remove(option);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ],
+            ),
+
           if (question['type'] == 'dropdown')
-            DropdownButtonFormField<String>(
-              value: _dropdownValues[uniqueQuestionId],
-              onChanged: (String? newValue) {
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if(question['required'] && (_dropdownValues[uniqueQuestionId]?.isEmpty ?? true))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Please select an option',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                    DropdownButtonFormField<String>(
+                      value: _dropdownValues[uniqueQuestionId],
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _dropdownValues[uniqueQuestionId] = newValue ?? "";
+                        });
+                      },
+                      items: question['option'].map<DropdownMenuItem<String>>((option) {
+                        return DropdownMenuItem<String>(
+                          value: option,
+                          child: Text(option),
+                        );
+                      }).toList(),
+                      decoration: InputDecoration(labelText: 'Select one'),
+                    ),
+              ],
+            ),
+
+            if (question['type'] == 'multiple')
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if(question['required'] && (_multipleValues[uniqueQuestionId]?.isEmpty ?? true))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Please select an option',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                ...question['option'].map<Widget>((option){
+                  return RadioListTile<String>(
+                      title: Text(option),
+                      value: option,
+                      groupValue: _multipleValues[uniqueQuestionId],
+                      onChanged: (String? value){
+                        setState(() {
+                          _multipleValues[uniqueQuestionId] = value ?? "";
+                        });
+                      },
+                  );
+                }).toList(),
+              ],
+            ),
+
+          if (question['type'] == 'longtext')
+            TextFormField(
+              maxLines: null,
+              //controller: controller,
+              decoration: InputDecoration(labelText: "Answer"),
+              validator: (value) {
+                if (question['required'] && (value == null || value.isEmpty)) {
+                  return 'This field cannot be empty';
+                }
+                return null;
+              },
+              keyboardType: TextInputType.multiline,
+              onChanged: (value) {
                 setState(() {
-                  _dropdownValues[uniqueQuestionId] = newValue ?? "";
+                  _textboxValues[uniqueQuestionId] = value;
                 });
               },
-              items: question['option'].map<DropdownMenuItem<String>>((option) {
-                return DropdownMenuItem<String>(
-                  value: option,
-                  child: Text(option),
-                );
-              }).toList(),
-              decoration: InputDecoration(labelText: 'Select one'),
             ),
-          if (question['type'] == 'multiple')
-            ...question['option'].map<Widget>((option) {
-              return RadioListTile<String>(
-                title: Text(option),
-                value: option,
-                groupValue: _multipleValues[uniqueQuestionId],
-                onChanged: (String? value) {
-                  setState(() {
-                    _multipleValues[uniqueQuestionId] = value ?? "";
-                  });
-                },
-              );
-            }).toList(),
         ],
       ),
     );
@@ -289,24 +367,37 @@ class _FormCreateState extends State<FormCreate> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: _buildFormFields() +
-                      [
-                        ElevatedButton(
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              showAlert(context, "Success",
-                                  "Success submit form!", AlertType.success);
-                              _saveForm();
-                            }
-                          },
-                          child: const Text('Submit Form'),
-                        )
-                      ],
-                ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: _buildFormFields() +
+                        [
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (_formKey.currentState!.validate()) {
+                                await showAlert(context, "Success", "Success submit form!", AlertType.success, (){
+                                  _saveForm();
+
+                                  //navigating to form view after saving
+                                  if (mounted){
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => FormView(),
+                                      ),
+                                    );
+                                  }
+                                });
+                              }
+                            },
+                            child: const Text('Submit Form'),
+                          )
+                        ],
+                  ),
+              )
+
               ),
             ),
     );
