@@ -2,7 +2,7 @@
 
 class TemplateModel {
   // templateId = primary key dari table template->auto increment,gabisa untuk menyimpan templateId dari server
-  final int templateId;
+  final int? templateId;
 
   // bikin column baru (id) untuk simpan templateId dari server, karena kalau primary (templateId), gabisa.
   // dari server templateId=7, masuk ke SQLite kita templateId=1.
