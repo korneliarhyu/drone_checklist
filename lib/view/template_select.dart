@@ -90,7 +90,10 @@ class _TemplateSelectState extends State<TemplateSelect> {
         print("Template data is empty or not found");
         return false;
       } else {
+        // Jika data tidak kosong, mapping seluruh data dari state _templateData.
+        // Key: String, Value: dynamic.
         Map<String, dynamic> templateFormData = {
+          // 'nama data dari model' : servis yang memiliki return dari API ['nama json'],
           'assessment': _templateData['assessment'],
           'pre': _templateData['pre'],
           'post': _templateData['post']
@@ -106,11 +109,7 @@ class _TemplateSelectState extends State<TemplateSelect> {
             deletedAt: null
         );
 
-
-        // DatabaseHelper.insertTemplate(templateData as TemplateModel);
-
         DatabaseHelper.insertTemplate(templateModel);
-
 
         //alert success
         showAlert(

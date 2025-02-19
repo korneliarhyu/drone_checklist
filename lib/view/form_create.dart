@@ -166,7 +166,7 @@ class _FormCreateState extends State<FormCreate> {
     try {
       await DatabaseHelper.createForm(formModel);
     } catch (e) {
-      showAlert(context, "Form Not Saved!", "Failed save the form!!",
+      showAlert(context, "Form Not Saved!", "Failed saving form!",
           AlertType.failed, () {});
     }
     print(jsonEncode(formModel.formData));

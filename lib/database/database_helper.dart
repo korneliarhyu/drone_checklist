@@ -115,20 +115,18 @@ class DatabaseHelper {
     }
   }
 
-  // static Future<int> insertTemplate(Map<String, dynamic> templateData) async {
-  //   final db = await DatabaseHelper.db();
-  //   return await db.insert("template", templateData);
-  // }
 
   static Future<int> insertTemplate(TemplateModel model) async {
     final db = await DatabaseHelper.db();
+    //return await db.insert("template", templateData);
 
     final template = {
-      'serverTemplateId': model.serverTemplateId,
-      'templateName': model.templateName,
-      'formType': model.formType,
-      'templateFormData': json.encode(model.templateFormData),
-      'deletedAt': null
+      'serverTemplateId' : model.serverTemplateId,
+      'templateName' : model.templateName,
+      'formType' : model.formType,
+      'templateFormData' : jsonEncode(model.templateFormData),
+      'deletedAt' : null
+
     };
 
     final templateId = await db.insert('template', template);
