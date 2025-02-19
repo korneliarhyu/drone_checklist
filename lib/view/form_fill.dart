@@ -5,7 +5,7 @@ import 'dart:math' as math;
 
 class FormFill extends StatefulWidget {
   final int formId;
-  const FormFill({Key? key, required this.formId}) : super(key: key);
+  const FormFill({super.key, required this.formId});
 
   @override
   _FormFillState createState() => _FormFillState();
@@ -17,7 +17,7 @@ class _FormFillState extends State<FormFill> {
   final Map<String, String> _multipleValues = {}; //radio
   final Map<String, String> _textboxValues = {}; //text and longtext
   final Map<String, Set<String>> _checkboxValues = {}; //checklist
-  Map<String, List<String>> _selectedOptions = {};
+  final Map<String, List<String>> _selectedOptions = {};
 
   List<Map<String, dynamic>>? _formData;
   Map<String, dynamic>? _formName = {};
@@ -58,7 +58,7 @@ class _FormFillState extends State<FormFill> {
       String encodeFormData = jsonEncode(_formData);
 
       await DatabaseHelper.updateForm(widget.formId, encodeFormData, encodeUpdatedFormData);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Form updated successfully!')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form updated successfully!')));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error updating form: $e')));
     }
@@ -75,7 +75,7 @@ class _FormFillState extends State<FormFill> {
     List<Map<String, dynamic>> newData = (section['answer'].last['data'] as List<dynamic>).map<Map<String, dynamic>>((data) {
       return {
         'questionName': data['questionName'],
-        'answer': '',
+        'answer': _questionControllers[data['questionName']]?.text ?? '',
         'dataChanged': DateTime.now().toString().split('.').first.replaceAll('-', '/'),
         'qType': data['qType'],
         'option': List<String>.from(data['option'] ?? [])
@@ -107,6 +107,15 @@ class _FormFillState extends State<FormFill> {
             }
           }
           data['dataChanged'] = DateTime.now().toString().split('.').first.replaceAll('-', '/');
+        }
+      }else if(section['type'] == 'assessment'){
+        for(var question in section['answer']){
+          String questionName = question['questionName'];
+          TextEditingController? controller = _questionControllers[questionName];
+          if(controller != null){
+            question['answer'] = controller.text;
+            flight['dataChanged'] = DateTime.now().toString().split('.').first.replaceAll('-', '/');
+          }
         }
       }
     }
@@ -179,14 +188,6 @@ class _FormFillState extends State<FormFill> {
             padding: const EdgeInsets.all(16),
             child: ListView(
               children: [
-                // Text(
-                //   _formName?['formName'] ?? 'Untitled Form',
-                //   style: const TextStyle(
-                //     fontSize: 22,
-                //     fontWeight: FontWeight.bold,
-                //   ),
-                // ),
-                //const SizedBox(height: 20),
                 ..._buildFormFields(),
                 SwitchListTile(
                   title: const Text('Add new flight for Pre?'),
@@ -301,12 +302,11 @@ class _FormFillState extends State<FormFill> {
     return fields;
   }
 
-
   Widget _buildQuestionField(Map<String, dynamic> question, String questionId, TextEditingController controller, int flightNum) {
     String controllerKey = '$questionId-$flightNum';
-    controller = _questionControllers.putIfAbsent(controllerKey, () => TextEditingController(text: question['answer']));
+    // controller = _questionControllers.putIfAbsent(controllerKey, () => TextEditingController(text: question['answer']));
 
-    List<dynamic> options = List<String>.from(question['option'] ?? []); //buat ambil option dropdown & multiple (Checklist ga pake ini karena harus di trim)
+    List<dynamic> options = List<String>.from(question['option'] ?? []);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(

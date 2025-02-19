@@ -7,6 +7,8 @@ import 'package:drone_checklist/view/template_downloaded.dart';
 import 'package:drone_checklist/services/api_service.dart';
 
 class FormView extends StatefulWidget {
+  const FormView({super.key});
+
   @override
   _FormViewState createState() => _FormViewState();
 }
@@ -47,7 +49,7 @@ class _FormViewState extends State<FormView> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TemplateDownloaded(),
+        builder: (context) => const TemplateDownloaded(),
       ),
     );
     _callData();
@@ -57,7 +59,7 @@ class _FormViewState extends State<FormView> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => TemplateView(),
+        builder: (context) => const TemplateView(),
       ),
     );
   }

@@ -10,9 +10,9 @@ class TemplateSelect extends StatefulWidget {
   final int templateId;
 
   const TemplateSelect({
-    Key? key,
+    super.key,
     required this.templateId,
-  }) : super(key: key);
+  });
 
   @override
   _TemplateSelectState createState() => _TemplateSelectState();
@@ -164,8 +164,8 @@ class _TemplateSelectState extends State<TemplateSelect> {
                 //       TemplateDetail(templateId: widget.templateId),
                 // ));
               },
-              icon: Icon(Icons.download),
-              label: Text("Download Template"),
+              icon: const Icon(Icons.download),
+              label: const Text("Download Template"),
               tooltip: 'Download Template',
             ),
           ),
@@ -188,7 +188,7 @@ class _TemplateSelectState extends State<TemplateSelect> {
 
         //ini tadinya error
         ...section.keys.take(1).expand((entry) {
-          Map<String, dynamic> param = new Map<String, dynamic>(); //temp
+          Map<String, dynamic> param = <String, dynamic>{}; //temp
           if (title == "Assessment") {
             param = _templateData['assessment'];
           } else if (title == "Pre-Check") {
@@ -273,9 +273,9 @@ class _TemplateSelectState extends State<TemplateSelect> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Enter your answer',
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 4),
               Container(
@@ -299,7 +299,7 @@ class _TemplateSelectState extends State<TemplateSelect> {
             onChanged: null,
             title: Text(
               option.toString(),
-              style: TextStyle(
+              style: const TextStyle(
                   color: Colors.black
               ),
             ),
@@ -321,7 +321,7 @@ class _TemplateSelectState extends State<TemplateSelect> {
                 borderRadius: BorderRadius.circular(4),
               ),
               height: 80.0,
-              child: SingleChildScrollView(
+              child: const SingleChildScrollView(
                   child: Text(
                     'Enter your answer',
                     style: TextStyle(color: Colors.grey),

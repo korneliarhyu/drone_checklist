@@ -10,9 +10,9 @@ class FormCreate extends StatefulWidget {
   final int templateId;
 
   const FormCreate({
-    Key? key,
+    super.key,
     required this.templateId,
-  }) : super(key: key);
+  });
 
   @override
   _FormCreateState createState() => _FormCreateState();
@@ -29,9 +29,9 @@ class _FormCreateState extends State<FormCreate> {
   // Membuat dua variable kosong bertype Map _templateData dan _formData untuk menghindari error non-nullable.
   Map<String, dynamic>? _templateData = {};
   Map<String, dynamic> _formData = {};
-  Map<String, String> _questionName = {};
-  Map<String, String> _questionType = {};
-  Map<String, List<String>> _questionOptions = {};
+  final Map<String, String> _questionName = {};
+  final Map<String, String> _questionType = {};
+  final Map<String, List<String>> _questionOptions = {};
 
   bool _isLoading = true;
 
@@ -69,7 +69,7 @@ class _FormCreateState extends State<FormCreate> {
   }
 
   void _initFormData(Map<String, dynamic> data) {
-    ['assessment', 'pre', 'post'].forEach((section) {
+    for (var section in ['assessment', 'pre', 'post']) {
       if (data[section] != null) {
         data[section].forEach((questionId, questionData) {
           String uniqueQuestionId = '$section-$questionId';
@@ -93,7 +93,7 @@ class _FormCreateState extends State<FormCreate> {
           }
         });
       }
-    });
+    }
   }
 
   void _saveForm() async {
@@ -131,7 +131,7 @@ class _FormCreateState extends State<FormCreate> {
       sectionData[section]?.add(answerEntry);
     });
 
-    ['pre', 'post'].forEach((section) {
+    for (var section in ['pre', 'post']) {
       if (sectionData.containsKey(section)) {
         Map<int, List<Map<String, dynamic>>> flightData = {};
         sectionData[section]?.forEach((entry) {
@@ -146,7 +146,7 @@ class _FormCreateState extends State<FormCreate> {
               .toList() // ambil jawaban dari setiap pertanyaan untuk disimpan di tipe JSON
         });
       }
-    });
+    }
 
     if (sectionData.containsKey('assessment')) {
       structuredData
@@ -175,47 +175,45 @@ class _FormCreateState extends State<FormCreate> {
   List<Widget> _buildFormFields() {
     List<Widget> fields = [];
 
-    if (_formData != null) {
-      ['pre', 'post', 'assessment'].forEach((section) {
-        if (_formData![section] != null){
-          fields.add(Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            // Memunculkan judul per-section
-            child: Text(
-                section.toUpperCase(),
-                style: Theme
-                    .of(context)
-                    .textTheme
-                    .headlineLarge
-            ),
-          ));
+    for (var section in ['pre', 'post', 'assessment']) {
+      if (_formData[section] != null){
+        fields.add(Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0),
+          // Memunculkan judul per-section
+          child: Text(
+              section.toUpperCase(),
+              style: Theme
+                  .of(context)
+                  .textTheme
+                  .headlineLarge
+          ),
+        ));
 
-          fields.add(Card(
-            elevation: 3,
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _formData[section].entries.map<Widget>((entry) {
-                  // memberikan unique Key ke masing-masing question di setiap section
-                  // section = assessment, pre, post.
-                  String uniqueQuestionId = '$section-${entry.key}';
-                  Map<String, dynamic> questionData = entry.value;
-                  // Text Editing Controller ini bikin nilai text ngga hilang saat click field lainnya.
-                  TextEditingController? controller = _questionControllers[uniqueQuestionId];
-                  if (controller != null) {
-                    return _buildQuestionField(uniqueQuestionId, questionData, controller);
-                  }
-                  return SizedBox.shrink();
-                }).toList(),
-              ),
+        fields.add(Card(
+          elevation: 3,
+          margin: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _formData[section].entries.map<Widget>((entry) {
+                // memberikan unique Key ke masing-masing question di setiap section
+                // section = assessment, pre, post.
+                String uniqueQuestionId = '$section-${entry.key}';
+                Map<String, dynamic> questionData = entry.value;
+                // Text Editing Controller ini bikin nilai text ngga hilang saat click field lainnya.
+                TextEditingController? controller = _questionControllers[uniqueQuestionId];
+                if (controller != null) {
+                  return _buildQuestionField(uniqueQuestionId, questionData, controller);
+                }
+                return const SizedBox.shrink();
+              }).toList(),
             ),
-          ));
-        }
-      });
+          ),
+        ));
+      }
     }
-
+  
     return fields;
   }
 
@@ -230,7 +228,7 @@ class _FormCreateState extends State<FormCreate> {
           if (question['type'] == 'text')
             TextFormField(
               controller: controller,
-              decoration: InputDecoration(labelText: "Answer"),
+              decoration: const InputDecoration(labelText: "Answer"),
               validator: (value) {
                 if (question['required'] && (value == null || value.isEmpty)) {
                   return 'This field cannot be empty';
@@ -250,7 +248,7 @@ class _FormCreateState extends State<FormCreate> {
               children: [
                 //validasi
                 if(question['required'] && (_checkboxValues[uniqueQuestionId]?.isEmpty ?? true))
-                  Text(
+                  const Text(
                     'Please select at least one option',
                     style: TextStyle(color: Colors.red, fontSize: 12),
                   ),
@@ -283,8 +281,8 @@ class _FormCreateState extends State<FormCreate> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if(question['required'] && (_dropdownValues[uniqueQuestionId]?.isEmpty ?? true))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4),
                     child: Text(
                       'Please select an option',
                       style: TextStyle(color: Colors.red, fontSize: 12),
@@ -303,7 +301,7 @@ class _FormCreateState extends State<FormCreate> {
                           child: Text(option),
                         );
                       }).toList(),
-                      decoration: InputDecoration(labelText: 'Select one'),
+                      decoration: const InputDecoration(labelText: 'Select one'),
                     ),
               ],
             ),
@@ -313,8 +311,8 @@ class _FormCreateState extends State<FormCreate> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if(question['required'] && (_multipleValues[uniqueQuestionId]?.isEmpty ?? true))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4),
                     child: Text(
                       'Please select an option',
                       style: TextStyle(color: Colors.red, fontSize: 12),
@@ -339,7 +337,7 @@ class _FormCreateState extends State<FormCreate> {
             TextFormField(
               maxLines: null,
               //controller: controller,
-              decoration: InputDecoration(labelText: "Answer"),
+              decoration: const InputDecoration(labelText: "Answer"),
               validator: (value) {
                 if (question['required'] && (value == null || value.isEmpty)) {
                   return 'This field cannot be empty';
@@ -385,7 +383,7 @@ class _FormCreateState extends State<FormCreate> {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => FormView(),
+                                        builder: (context) => const FormView(),
                                       ),
                                     );
                                   }
