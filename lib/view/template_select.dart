@@ -64,6 +64,28 @@ class _TemplateSelectState extends State<TemplateSelect> {
     try {
       await _loadTemplateData(templateId);
 
+      // if (_templateData.isEmpty) {
+      //   print("Template data is empty or not found");
+      //   return false;
+      // } else {
+      //   String serializeForm = json.encode({
+      //     'assessment': _templateData['assessment'],
+      //     'pre': _templateData['pre'],
+      //     'post': _templateData['post']
+      //   });
+      //
+      //   // Jika data tidak kosong, mapping seluruh data dari state _templateData.
+      //   // Key: String, Value: dynamic.
+      //   Map<String, dynamic> templateData = {
+      //     // 'nama data dari model' : servis yang memiliki return dari API ['nama json'],
+      //     'serverTemplateId': _templateData['id'],
+      //     'templateName': _templateData['templateName'],
+      //     'formType': 'assessment-pre-post',
+      //     'updatedDate': DateTime.now().toString(),
+      //     'templateFormData': serializeForm,
+      //     'deletedAt': null,
+      //   };
+
       if (_templateData.isEmpty) {
         print("Template data is empty or not found");
         return false;
