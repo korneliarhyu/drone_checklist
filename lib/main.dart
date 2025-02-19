@@ -3,15 +3,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:drone_checklist/view/form_view.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: _buildLightTheme(),
-      home: FormView(),
+      home: const FormView(),
     );
   }
 
