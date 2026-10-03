@@ -320,9 +320,12 @@ class _FormViewState extends State<FormView> {
                   ),
 
                   if (_formList.isEmpty)
-                    const SliverFillRemaining(
+                    SliverFillRemaining(
                       hasScrollBody: false,
-                      child: _EmptyFormState(),
+                      child: Transform.translate(
+                        offset: const Offset(0, -60),
+                        child: const _EmptyFormState(),
+                      ),
                     )
                   else if (forms.isEmpty)
                     const SliverFillRemaining(
