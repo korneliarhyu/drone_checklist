@@ -12,7 +12,7 @@ class FormFill extends StatefulWidget {
 }
 
 class _FormFillState extends State<FormFill> {
-  Map<String, TextEditingController> _questionControllers = {};
+  final Map<String, TextEditingController> _questionControllers = {};
   final Map<String, String> _dropdownValues = {}; //dropdown
   final Map<String, String> _multipleValues = {}; //radio
   final Map<String, String> _textboxValues = {}; //text and longtext
@@ -268,7 +268,7 @@ class _FormFillState extends State<FormFill> {
                       TextEditingController controller = _questionControllers.putIfAbsent(
                           '$questionId-$flightNum', () => TextEditingController(text: data['answer']));
                       return _buildQuestionField(data, questionId, controller, flightNum);
-                    }).toList(),
+                    }),
                   ],
                 ),
               ),
@@ -291,7 +291,7 @@ class _FormFillState extends State<FormFill> {
                         questionId, () => TextEditingController(text: answer['answer']),
                       );
                       return _buildQuestionField(answer, questionId, controller, flightNum);
-                    }).toList(),
+                    }),
                   ],
                 )
             ),
@@ -316,7 +316,7 @@ class _FormFillState extends State<FormFill> {
           if (question['qType'] == 'text')
             TextFormField(
                 controller: controller,
-                decoration: InputDecoration(labelText: 'Answer')
+                decoration: const InputDecoration(labelText: 'Answer')
             ),
           if (question['qType'] == 'checklist')
             ...question['option'].map<Widget>((option) {
@@ -340,7 +340,7 @@ class _FormFillState extends State<FormFill> {
             }).toList(),
           if (question['qType'] == 'dropdown')
             DropdownButtonFormField<String>(
-              value: controller.text.isEmpty ? null : controller.text,
+              initialValue: controller.text.isEmpty ? null : controller.text,
               onChanged: (String? newValue) {
                 setState(() {
                   controller.text = newValue ?? '';
@@ -352,7 +352,7 @@ class _FormFillState extends State<FormFill> {
                   child: Text(option),
                 );
               }).toList(),
-              decoration: InputDecoration(labelText: 'Select one'),
+              decoration: const InputDecoration(labelText: 'Select one'),
             ),
           if (question['qType'] == 'multiple')
             ...question['option'].map<Widget>((option) {
@@ -372,7 +372,7 @@ class _FormFillState extends State<FormFill> {
             TextFormField(
               maxLines: null,
               controller: controller,
-              decoration: InputDecoration(labelText: "Answer"),
+              decoration: const InputDecoration(labelText: "Answer"),
               validator: (value) {
                 if (question['required'] && (value == null || value.isEmpty)) {
                   return 'This field cannot be empty';

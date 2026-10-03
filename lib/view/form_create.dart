@@ -21,7 +21,7 @@ class FormCreate extends StatefulWidget {
 class _FormCreateState extends State<FormCreate> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, TextEditingController> _questionControllers = {};
-  final Map<String, String> _dropdownValues = {};
+  final Map<String, String?> _dropdownValues = {};
   final Map<String, String> _multipleValues = {};
   final Map<String, String> _textboxValues = {};
   final Map<String, Set<String>> _checkboxValues = {};
@@ -85,7 +85,7 @@ class _FormCreateState extends State<FormCreate> {
           if (questionData['type'] == 'text' || questionData['type'] == 'longtext'){
             _textboxValues[uniqueQuestionId] = '';
           } else if (questionData['type'] == 'dropdown'){
-            _dropdownValues[uniqueQuestionId] = '';
+            _dropdownValues[uniqueQuestionId] = null;
           } else if (questionData['type'] == 'multiple'){
             _multipleValues[uniqueQuestionId] = '';
           } else if (questionData['type'] == 'checklist'){
@@ -289,7 +289,7 @@ class _FormCreateState extends State<FormCreate> {
                     ),
                   ),
                     DropdownButtonFormField<String>(
-                      value: _dropdownValues[uniqueQuestionId],
+                      initialValue: _dropdownValues[uniqueQuestionId],
                       onChanged: (String? newValue) {
                         setState(() {
                           _dropdownValues[uniqueQuestionId] = newValue ?? "";
@@ -306,11 +306,12 @@ class _FormCreateState extends State<FormCreate> {
               ],
             ),
 
-            if (question['type'] == 'multiple')
+          if (question['type'] == 'multiple')
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if(question['required'] && (_multipleValues[uniqueQuestionId]?.isEmpty ?? true))
+                if (question['required'] &&
+                    (_multipleValues[uniqueQuestionId]?.isEmpty ?? true))
                   const Padding(
                     padding: EdgeInsets.only(top: 4),
                     child: Text(
@@ -318,20 +319,53 @@ class _FormCreateState extends State<FormCreate> {
                       style: TextStyle(color: Colors.red, fontSize: 12),
                     ),
                   ),
-                ...question['option'].map<Widget>((option){
-                  return RadioListTile<String>(
-                      title: Text(option),
-                      value: option,
-                      groupValue: _multipleValues[uniqueQuestionId],
-                      onChanged: (String? value){
-                        setState(() {
-                          _multipleValues[uniqueQuestionId] = value ?? "";
-                        });
-                      },
-                  );
-                }).toList(),
+
+                RadioGroup<String>(
+                  groupValue: _multipleValues[uniqueQuestionId],
+                  onChanged: (String? value) {
+                    setState(() {
+                      _multipleValues[uniqueQuestionId] = value ?? "";
+                    });
+                  },
+                  child: Column(
+                    children: question['option'].map<Widget>((option) {
+                      return RadioListTile<String>(
+                        title: Text(option),
+                        value: option,
+                      );
+                    }).toList(),
+                  ),
+                ),
               ],
             ),
+
+            // DEPRICATED VERSION
+            // if (question['type'] == 'multiple')
+            // Column(
+            //   crossAxisAlignment: CrossAxisAlignment.start,
+            //   children: [
+            //     if(question['required'] && (_multipleValues[uniqueQuestionId]?.isEmpty ?? true))
+            //       const Padding(
+            //         padding: EdgeInsets.only(top: 4),
+            //         child: Text(
+            //           'Please select an option',
+            //           style: TextStyle(color: Colors.red, fontSize: 12),
+            //         ),
+            //       ),
+            //     ...question['option'].map<Widget>((option){
+            //       return RadioListTile<String>(
+            //           title: Text(option),
+            //           value: option,
+            //           groupValue: _multipleValues[uniqueQuestionId],
+            //           onChanged: (String? value){
+            //             setState(() {
+            //               _multipleValues[uniqueQuestionId] = value ?? "";
+            //             });
+            //           },
+            //       );
+            //     }).toList(),
+            //   ],
+            // ),
 
           if (question['type'] == 'longtext')
             TextFormField(
