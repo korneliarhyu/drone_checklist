@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:drone_checklist/view/form_view.dart';
+import 'package:drone_checklist/theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,15 +12,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: _buildLightTheme(),
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
       home: const FormView(),
-    );
-  }
-
-  ThemeData _buildLightTheme() {
-    var baseTheme = ThemeData.light();
-    return baseTheme.copyWith(
-      textTheme: GoogleFonts.latoTextTheme(baseTheme.textTheme),
     );
   }
 }
