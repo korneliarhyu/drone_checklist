@@ -25,28 +25,66 @@ class TemplateView extends StatelessWidget {
         throw Exception("No data received from the server");
       }
     } on DioException catch (dioError){
+      // String errorMessage = _handleDioError(dioError);
+      // print("Error fetching templates: $errorMessage");
+      // throw Exception(errorMessage);
+
+      debugPrint("DIO TYPE: ${dioError.type}");
+      debugPrint("DIO MESSAGE: ${dioError.message}");
+      debugPrint("DIO ERROR: ${dioError.error}");
+      debugPrint("STATUS CODE: ${dioError.response?.statusCode}");
+      debugPrint("RESPONSE: ${dioError.response?.data}");
+
       String errorMessage = _handleDioError(dioError);
-      print("Error fetching templates: $errorMessage");
       throw Exception(errorMessage);
     } catch (e, s) {
-      print("Error fetching templates: $e");
-      print("stacktrace: $s");
-      throw Exception("An unexpected error occured");
+      // print("Error fetching templates: $e");
+      // print("stacktrace: $s");
+      // throw Exception("An unexpected error occured");
+
+      debugPrint("ERROR: $e");
+      debugPrint("STACKTRACE: $s");
+
+      throw Exception(e.toString());
     }
   }
 
-  String _handleDioError(DioException error){
-    switch (error.type){
+  // String _handleDioError(DioException error){
+  //   switch (error.type){
+  //     case DioExceptionType.connectionTimeout:
+  //     case DioExceptionType.receiveTimeout:
+  //     case DioExceptionType.sendTimeout:
+  //       return "Connection timed out. Please check your internet connection.";
+  //     case DioExceptionType.badResponse:
+  //       return "Server error: ${error.response?.statusCode}. Please try again later.";
+  //     case DioExceptionType.cancel:
+  //       return "Request was cancelled.";
+  //     case DioExceptionType.unknown:
+  //       return "No connection available. Please check your network.";
+  //     default:
+  //       return "An unexpected error occured.";
+  //   }
+  // }
+
+  String _handleDioError(DioException error) {
+    switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:
       case DioExceptionType.sendTimeout:
         return "Connection timed out. Please check your internet connection.";
+
+      case DioExceptionType.connectionError:
+        return "Cannot connect to server.";
+
       case DioExceptionType.badResponse:
         return "Server error: ${error.response?.statusCode}. Please try again later.";
+
       case DioExceptionType.cancel:
         return "Request was cancelled.";
+
       case DioExceptionType.unknown:
-        return "No connection available. Please check your network.";
+        return "Unknown network error.";
+
       default:
         return "An unexpected error occured.";
     }

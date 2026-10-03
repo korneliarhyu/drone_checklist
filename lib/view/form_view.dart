@@ -6,6 +6,9 @@ import 'package:drone_checklist/view/template_view.dart';
 import 'package:drone_checklist/view/template_downloaded.dart';
 import 'package:drone_checklist/services/api_service.dart';
 
+// LOCAL TEMPLATE
+import 'package:drone_checklist/view/sample_template_view.dart';
+
 class FormView extends StatefulWidget {
   const FormView({super.key});
 
@@ -55,11 +58,22 @@ class _FormViewState extends State<FormView> {
     _callData();
   }
 
+  // INACTIVE DUE TO INACTIVE API/WEBSITE
+  // void _navigateToTemplatesList() async {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => const TemplateView(),
+  //     ),
+  //   );
+  // }
+
+  // USE THIS ONE INSTEAD TO NAVIGATE TO SAMPLE TEMPLATE LIST
   void _navigateToTemplatesList() async {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const TemplateView(),
+        builder: (context) => const SampleTemplateView(),
       ),
     );
   }
