@@ -2,7 +2,6 @@ import 'package:drone_checklist/database/database_helper.dart';
 import 'package:drone_checklist/view/form_fill.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:drone_checklist/view/template_view.dart';
 import 'package:drone_checklist/view/template_downloaded.dart';
 import 'package:drone_checklist/services/api_service.dart';
 
