@@ -41,3 +41,16 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Backend dependencies and build output
+/backend/node_modules/
+/backend/dist/
+/backend/coverage/
+
+# Backend secrets
+/backend/.env
+/backend/.env.*
+!/backend/.env.example
+
+# Generated Prisma Client
+/backend/src/generated/prisma/
