@@ -121,12 +121,12 @@ class DatabaseHelper {
     //return await db.insert("template", templateData);
 
     final template = {
-      'serverTemplateId' : model.serverTemplateId,
-      'templateName' : model.templateName,
-      'formType' : model.formType,
-      'templateFormData' : jsonEncode(model.templateFormData),
-      'deletedAt' : null
-
+      'serverTemplateId': model.serverTemplateId,
+      'templateName': model.templateName,
+      'formType': model.formType,
+      'updatedDate': model.updatedDate.toIso8601String(),
+      'templateFormData': jsonEncode(model.templateFormData),
+      'deletedAt': null,
     };
 
     final templateId = await db.insert('template', template);

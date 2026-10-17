@@ -1,392 +1,1350 @@
 import 'dart:convert';
 import 'package:drone_checklist/database/database_helper.dart';
+import 'package:drone_checklist/widgets/success_dialog.dart';
+import 'package:drone_checklist/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 class FormFill extends StatefulWidget {
   final int formId;
   const FormFill({super.key, required this.formId});
 
   @override
-  _FormFillState createState() => _FormFillState();
+  State<FormFill> createState() => _FormFillState();
 }
 
 class _FormFillState extends State<FormFill> {
-  final Map<String, TextEditingController> _questionControllers = {};
-  final Map<String, String> _dropdownValues = {}; //dropdown
-  final Map<String, String> _multipleValues = {}; //radio
-  final Map<String, String> _textboxValues = {}; //text and longtext
-  final Map<String, Set<String>> _checkboxValues = {}; //checklist
-  final Map<String, List<String>> _selectedOptions = {};
+  static const List<String> _sections = [
+    'assessment',
+    'pre',
+    'post',
+  ];
 
-  List<Map<String, dynamic>>? _formData;
-  Map<String, dynamic>? _formName = {};
-  bool _isLoading = true;
-  bool isCheckPre = false;
-  bool isCheckPost = false;
+  static const List<String> _titles = [
+    'Assessment',
+    'Pre-Flight',
+    'Post-Flight',
+  ];
 
-  @override
-  void dispose() {
-    // Dispose all controllers
-    _questionControllers.forEach((key, controller) {
-      controller.dispose();
-    });
-    super.dispose();
-  }
+  static const List<String> _descriptions = [
+    'Evaluate your drone before the flight.',
+    'Complete the pre-flight checklist.',
+    'Record your post-flight observations.',
+  ];
+
+  final Map<String, TextEditingController> _controllers = {};
+  final Map<String, Set<String>> _checkedOptions = {};
+  final Map<String, bool> _templateRequired = {};
+  final Set<String> _requiredKeys = {};
+  final ScrollController _scrollController = ScrollController();
+
+  List<Map<String, dynamic>> _formData = [];
+
+  String _formName = 'Drone Flight Checklist';
+  String? _loadError;
+
+  int _currentStep = 0;
+
+  bool _loading = true;
+  bool _saving = false;
+  bool _showErrors = false;
+  bool _addPreFlight = false;
+  bool _addPostFlight = false;
+
+  String get _currentSection => _sections[_currentStep];
+
+  double get _progress => (_currentStep + 1) / 3;
 
   @override
   void initState() {
     super.initState();
-    _loadFormData(widget.formId);
+    _loadFormData();
   }
 
-  void _updateForm(bool isCheckPre, bool isCheckPost) async {
-    List<Map<String, dynamic>> updatedSections = [];
-    try {
-      _formData?.forEach((section) {
-        bool isNewFlight = (section['type'] == 'pre' && isCheckPre) || (section['type'] == 'post' && isCheckPost);
-
-        if (isNewFlight) {
-          _newFlight(section);
-        } else {
-          _updateData(section);
-        }
-        updatedSections.add(section);
-      });
-
-      String encodeUpdatedFormData = jsonEncode(updatedSections);
-      String encodeFormData = jsonEncode(_formData);
-
-      await DatabaseHelper.updateForm(widget.formId, encodeFormData, encodeUpdatedFormData);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form updated successfully!')));
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error updating form: $e')));
-    }
-  }
-
-  void _newFlight(Map<String, dynamic> section) {
-    int newFlightNum = 1;
-    if (section['answer'].isNotEmpty) {
-      newFlightNum = section['answer']
-          .map<int>((a) => a['flightNum'] as int)
-          .reduce((int a, int b) => math.max(a, b)) + 1;
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
     }
 
-    List<Map<String, dynamic>> newData = (section['answer'].last['data'] as List<dynamic>).map<Map<String, dynamic>>((data) {
-      return {
-        'questionName': data['questionName'],
-        'answer': _questionControllers[data['questionName']]?.text ?? '',
-        'dataChanged': DateTime.now().toString().split('.').first.replaceAll('-', '/'),
-        'qType': data['qType'],
-        'option': List<String>.from(data['option'] ?? [])
-      };
-    }).toList();
-
-    section['answer'].add({
-      'flightNum': newFlightNum,
-      'data': newData
-    });
+    _scrollController.dispose();
+    super.dispose();
   }
 
-  void _updateData(Map<String, dynamic> section) {
-    for (var flight in section['answer']) {
-      int flightNum = flight['flightNum'] ?? 0; //set ke 0 kalo null
+  // ==========================================
+  // HELPERS
+  // ==========================================
+  String _key(
+      String section,
+      int flightNumber,
+      int questionIndex,
+      ) {
+    return '$section|$flightNumber|$questionIndex';
+  }
 
-      if (flight['data'] != null) {
-        for (var data in flight['data']) {
-          String questionName = data['questionName'];
-          String controllerKey = '$questionName-$flightNum';
+  List<dynamic> _asList(dynamic value) {
+    return value is List ? value : <dynamic>[];
+  }
 
-          if (data['qType'] == 'checklist') {
-            data['answer'] = _checkboxValues[controllerKey]?.join(', ') ?? '';
-            data['option'] = data['option'] ?? [];
-          } else{
-            TextEditingController? controller = _questionControllers[controllerKey];
-            if (controller != null) {
-              data['answer'] = controller.text;
-            }
-          }
-          data['dataChanged'] = DateTime.now().toString().split('.').first.replaceAll('-', '/');
-        }
-      }else if(section['type'] == 'assessment'){
-        for(var question in section['answer']){
-          String questionName = question['questionName'];
-          TextEditingController? controller = _questionControllers[questionName];
-          if(controller != null){
-            question['answer'] = controller.text;
-            flight['dataChanged'] = DateTime.now().toString().split('.').first.replaceAll('-', '/');
-          }
-        }
+  String _timestamp() {
+    return DateTime.now()
+        .toString()
+        .split('.')
+        .first
+        .replaceAll('-', '/');
+  }
+
+  Map<String, dynamic>? _sectionData(String section) {
+    for (final item in _formData) {
+      if (item['type'] == section) {
+        return item;
       }
     }
-    //debugging
-    print("After updateData: $section");
+    return null;
   }
 
-  void _loadFormData(int formId) async {
+  void _registerQuestion(
+      String section,
+      int flightNumber,
+      int questionIndex,
+      Map<String, dynamic> question,
+      ) {
+    final key = _key(
+      section,
+      flightNumber,
+      questionIndex,
+    );
+
+    final answer = question['answer']?.toString() ?? '';
+    final lookup =
+        '$section|${question['questionName']}|${question['qType']}';
+
+    if (question['required'] == true ||
+        _templateRequired[lookup] == true) {
+      _requiredKeys.add(key);
+    }
+
+    _controllers.putIfAbsent(
+      key,
+          () => TextEditingController(text: answer),
+    );
+
+    if (question['qType'] == 'checklist') {
+      _checkedOptions.putIfAbsent(
+        key,
+            () => answer.isEmpty
+            ? <String>{}
+            : answer
+            .split(', ')
+            .where((item) => item.isNotEmpty)
+            .toSet(),
+      );
+    }
+  }
+
+  // ==========================================
+  // LOAD TEMPLATE VALIDATION
+  // ==========================================
+
+  Future<void> _loadTemplateRules(dynamic templateId) async {
+    if (templateId == null) return;
+
     try {
-      var form = await DatabaseHelper.getFormById(formId);
+      final id = templateId is num
+          ? templateId.toInt()
+          : int.tryParse(templateId.toString());
+
+      if (id == null) return;
+
+      final template =
+      await DatabaseHelper.getTemplateById(id);
+
+      final raw = template['templateFormData'];
+
+      final data = raw is String
+          ? jsonDecode(raw)
+          : raw;
+
+      if (data is! Map) return;
+
+      for (final section in _sections) {
+        final questions = data[section];
+
+        if (questions is! Map) continue;
+
+        for (final question in questions.values) {
+          if (question is! Map) continue;
+
+          final lookup =
+              '$section|${question['question']}|${question['type']}';
+
+          _templateRequired[lookup] =
+              question['required'] == true;
+        }
+      }
+    } catch (e) {
+      debugPrint('Template validation unavailable: $e');
+    }
+  }
+
+  // ==========================================
+  // LOAD FORM DATA
+  // ==========================================
+
+  Future<void> _loadFormData() async {
+    try {
+      final form =
+      await DatabaseHelper.getFormById(widget.formId);
+
       if (form == null) {
-        print("Form data not found!: $formId");
-        setState(() => _isLoading = false);
+        if (!mounted) return;
+
+        setState(() {
+          _loadError = 'Form not found.';
+          _loading = false;
+        });
+
         return;
       }
-      print("Form data retrieved: $form");
-      List<Map<String, dynamic>> formData = form['updatedFormData'] != null
-          ? List<Map<String, dynamic>>.from(jsonDecode(form['updatedFormData']))
-          : [];
 
-      print("Parsed form data: $formData");
-      // initiate buat pertanyaan type checklist agar bisa diambil jawaban dan dipassing ke text controller karna value checkbox itu tipe boolean dan bukan string
-      _formData = formData;
-      _formData?.forEach((section) {
-        section['answer'].forEach((answer) {
-          if (answer['data'] != null) {
-            answer['data'].forEach((data) {
-              if (data['qType'] == 'checklist') {
-                String controllerKey = '${data['questionName']}-${answer['flightNum']}';
-                List<String> selectedOptions = (data['answer'] as String).split(', ').where((item) => item.isNotEmpty).toList();
-                _checkboxValues[controllerKey] = Set<String>.from(selectedOptions);
+      await _loadTemplateRules(form['templateId']);
 
-                //debug
-                print("Initialized controllerKey: $controllerKey");
-                print("Checkbox values: ${_checkboxValues[controllerKey]}");
-                _questionControllers[controllerKey] = TextEditingController(text: selectedOptions.join(', '));
-              } else {
-                String controllerKey = '${data['questionName']}-${answer['flightNum']}';
-                _questionControllers[controllerKey] = TextEditingController(text: data['answer']);
-              }
-            });
+      final raw =
+          form['updatedFormData'] ?? form['formData'];
+
+      final decoded =
+      raw is String ? jsonDecode(raw) : raw;
+
+      final sections = _asList(decoded)
+          .map(
+            (item) => Map<String, dynamic>.from(
+          item as Map,
+        ),
+      )
+          .toList();
+
+      for (final section in sections) {
+        final type = section['type']?.toString() ?? '';
+
+        final answers = _asList(section['answer']);
+
+        if (type == 'assessment') {
+          for (var i = 0; i < answers.length; i++) {
+            _registerQuestion(
+              type,
+              0,
+              i,
+              Map<String, dynamic>.from(
+                answers[i] as Map,
+              ),
+            );
           }
-        });
-      });
+        } else if (type == 'pre' || type == 'post') {
+          for (final flight in answers) {
+            final flightMap =
+            Map<String, dynamic>.from(flight as Map);
+
+            final number =
+                (flightMap['flightNum'] as num?)
+                    ?.toInt() ??
+                    1;
+
+            final questions =
+            _asList(flightMap['data']);
+
+            for (var i = 0; i < questions.length; i++) {
+              _registerQuestion(
+                type,
+                number,
+                i,
+                Map<String, dynamic>.from(
+                  questions[i] as Map,
+                ),
+              );
+            }
+          }
+        }
+      }
+
+      if (!mounted) return;
+
       setState(() {
-        _formData = formData;
-        _formName = form;
-        _isLoading = false;
+        _formName =
+            form['formName']?.toString() ??
+                'Drone Flight Checklist';
+
+        _formData = sections;
+        _loading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      print("Error loading form data: $e");
+      if (!mounted) return;
+
+      setState(() {
+        _loadError = 'Failed to load form: $e';
+        _loading = false;
+      });
     }
   }
 
+  // ==========================================
+  // VALIDATION
+  // ==========================================
+
+  bool _questionValid(
+      String key,
+      Map<String, dynamic> question,
+      ) {
+    if (!_requiredKeys.contains(key)) {
+      return true;
+    }
+
+    if (question['qType'] == 'checklist') {
+      return _checkedOptions[key]?.isNotEmpty ?? false;
+    }
+
+    return _controllers[key]
+        ?.text
+        .trim()
+        .isNotEmpty ??
+        false;
+  }
+
+  bool _validateStep() {
+    final section = _sectionData(_currentSection);
+
+    if (section == null) return true;
+
+    bool valid = true;
+
+    void inspect(
+        int flightNumber,
+        List<dynamic> questions,
+        ) {
+      for (var i = 0; i < questions.length; i++) {
+        final question =
+        Map<String, dynamic>.from(
+          questions[i] as Map,
+        );
+
+        final key = _key(
+          _currentSection,
+          flightNumber,
+          i,
+        );
+
+        if (!_questionValid(key, question)) {
+          valid = false;
+        }
+      }
+    }
+
+    if (_currentSection == 'assessment') {
+      inspect(
+        0,
+        _asList(section['answer']),
+      );
+    } else {
+      for (final item in _asList(section['answer'])) {
+        final flight =
+        Map<String, dynamic>.from(item as Map);
+
+        inspect(
+          (flight['flightNum'] as num?)?.toInt() ?? 1,
+          _asList(flight['data']),
+        );
+      }
+    }
+
+    setState(() {
+      _showErrors = !valid;
+    });
+
+    return valid;
+  }
+
+  // ==========================================
+  // NAVIGATION
+  // ==========================================
+
+  void _scrollToTop() {
+    if (!_scrollController.hasClients) return;
+
+    _scrollController.jumpTo(0);
+  }
+
+  void _next() {
+    if (!_validateStep()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Complete the required fields first.',
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    if (_currentStep == 2) {
+      _save();
+      return;
+    }
+
+    setState(() {
+      _currentStep++;
+      _showErrors = false;
+    });
+
+    _scrollToTop();
+  }
+
+  void _back() {
+    if (_currentStep == 0) return;
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _currentStep--;
+      _showErrors = false;
+    });
+
+    _scrollToTop();
+  }
+
+  // ==========================================
+  // UPDATE ANSWERS
+  // ==========================================
+
+  void _writeAnswers(
+      String section,
+      int flightNumber,
+      List<dynamic> questions,
+      ) {
+    for (var i = 0; i < questions.length; i++) {
+      final item = questions[i] as Map;
+
+      final key = _key(
+        section,
+        flightNumber,
+        i,
+      );
+
+      final type = item['qType']?.toString() ?? '';
+
+      if (type == 'checklist') {
+        item['answer'] =
+            (_checkedOptions[key] ?? <String>{})
+                .join(', ');
+      } else {
+        item['answer'] =
+            _controllers[key]?.text ??
+                item['answer']?.toString() ??
+                '';
+      }
+
+      item['dataChanged'] = _timestamp();
+    }
+  }
+
+  // ==========================================
+  // ADD NEW FLIGHT
+  // ==========================================
+
+  void _appendFlightIfRequested(
+      Map<String, dynamic> section,
+      ) {
+    final type = section['type'];
+
+    final requested =
+        (type == 'pre' && _addPreFlight) ||
+            (type == 'post' && _addPostFlight);
+
+    if (!requested) return;
+
+    final flights = _asList(section['answer']);
+
+    if (flights.isEmpty) return;
+
+    final last =
+    Map<String, dynamic>.from(flights.last as Map);
+
+    final nextNumber = flights
+        .map(
+          (flight) =>
+      ((flight as Map)['flightNum'] as num?)
+          ?.toInt() ??
+          0,
+    )
+        .fold<int>(
+      0,
+          (highest, number) =>
+      number > highest ? number : highest,
+    ) +
+        1;
+
+    final copiedQuestions =
+    _asList(last['data'])
+        .map(
+          (question) =>
+      Map<String, dynamic>.from(
+        question as Map,
+      ),
+    )
+        .toList();
+
+    flights.add({
+      'flightNum': nextNumber,
+      'data': copiedQuestions,
+    });
+
+    section['answer'] = flights;
+  }
+
+  // ==========================================
+  // SAVE FORM
+  // ==========================================
+  Future<void> _save() async {
+    if (_saving) return;
+
+    setState(() {
+      _saving = true;
+    });
+
+    try {
+      final updated =
+      (jsonDecode(jsonEncode(_formData)) as List)
+          .map(
+            (item) => Map<String, dynamic>.from(
+          item as Map,
+        ),
+      )
+          .toList();
+
+      for (final section in updated) {
+        final type = section['type']?.toString() ?? '';
+
+        if (type == 'assessment') {
+          _writeAnswers(
+            type,
+            0,
+            _asList(section['answer']),
+          );
+        } else if (type == 'pre' || type == 'post') {
+          for (final item
+          in _asList(section['answer'])) {
+            final flight = item as Map;
+
+            _writeAnswers(
+              type,
+              (flight['flightNum'] as num?)
+                  ?.toInt() ??
+                  1,
+              _asList(flight['data']),
+            );
+          }
+
+          _appendFlightIfRequested(section);
+        }
+      }
+
+      final encoded = jsonEncode(updated);
+
+      await DatabaseHelper.updateForm(
+        widget.formId,
+        encoded,
+        encoded,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _formData = updated;
+        _addPreFlight = false;
+        _addPostFlight = false;
+        _saving = false;
+      });
+
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const SuccessDialog(
+          title: 'Updated!',
+          message: 'Your changes have been saved.',
+        ),
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _saving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save changes: $e'),
+        ),
+      );
+    }
+  }
+
+  // ==========================================
+  // MAIN BUILD
+  // ==========================================
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(_formName?['formName'] ?? 'Untitled Form'),
+        title: Text(
+          _formName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _formData == null
-          ? const Center(child: Text('No form data available'))
-          : Builder(
-        builder: (context) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
+      body: _loading
+          ? const Center(
+        child: CircularProgressIndicator(),
+      )
+          : _loadError != null
+          ? Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            _loadError!,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      )
+          : Column(
+        children: [
+          _buildHeader(),
+
+          Expanded(
             child: ListView(
-              children: [
-                ..._buildFormFields(),
-                SwitchListTile(
-                  title: const Text('Add new flight for Pre?'),
-                  value: isCheckPre,
-                  onChanged: (bool value) {
-                    setState(() {
-                      isCheckPre = value;
-                    });
-                  },
-                ),
-                SwitchListTile(
-                  title: const Text('Add new flight for Post?'),
-                  value: isCheckPost,
-                  onChanged: (bool value) {
-                    setState(() {
-                      isCheckPost = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () async {
-                    _updateForm(isCheckPre, isCheckPost);
-
-                    //set switchnya jadi mati lagi
-                    setState(() {
-                      isCheckPre = false;
-                      isCheckPost = false;
-                    });
-
-                    //load ulang data
-                    _loadFormData(widget.formId);
-                  },
-                  child: const Text('Save Changes'),
-                ),
-              ],
+              controller: _scrollController,
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                12,
+                20,
+                24,
+              ),
+              children: _buildCurrentStep(),
             ),
-          );
-        },
+          ),
+
+          _buildFooter(),
+        ],
       ),
     );
   }
 
-  List<Widget> _buildFormFields() {
-    List<Widget> fields = [];
-    if (_formData != null) {
-      for (var section in _formData!) {
-        fields.add(Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16.0),
-            child: Text(
-              section['type'].toString().toUpperCase(),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineLarge,
-            )
-        ));
+  // ==========================================
+  // PROGRESS HEADER
+  // ==========================================
 
-        if (section['type'] != 'assessment') {
-          for (var flight in section['answer']) {
-            fields.add(Card(
-              elevation: 3,
-              margin: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Flight Number: ${flight['flightNum']}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...(flight['data'] as List<dynamic>).map<Widget>((data){
-                      String questionId = data['questionName'];
-                      int flightNum = flight['flightNum'];
-                      TextEditingController controller = _questionControllers.putIfAbsent(
-                          '$questionId-$flightNum', () => TextEditingController(text: data['answer']));
-                      return _buildQuestionField(data, questionId, controller, flightNum);
-                    }),
-                  ],
-                ),
-              ),
-            ));
-          }
-        } else {
-          fields.add(Card(
-            elevation: 3,
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    ...(section['answer'] as List<dynamic>).map<Widget>((answer) {
-                      String questionId = answer['questionName'];
-                      int flightNum = 1;
-                      TextEditingController controller = _questionControllers.putIfAbsent(
-                        questionId, () => TextEditingController(text: answer['answer']),
-                      );
-                      return _buildQuestionField(answer, questionId, controller, flightNum);
-                    }),
-                  ],
-                )
-            ),
-          ));
-        }
-      }
-    }
-    return fields;
-  }
+  Widget _buildHeader() {
+    final percent = (_progress * 100).round();
 
-  Widget _buildQuestionField(Map<String, dynamic> question, String questionId, TextEditingController controller, int flightNum) {
-    String controllerKey = '$questionId-$flightNum';
-    // controller = _questionControllers.putIfAbsent(controllerKey, () => TextEditingController(text: question['answer']));
-
-    List<dynamic> options = List<String>.from(question['option'] ?? []);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        10,
+        20,
+        12,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(question['questionName']),
-          if (question['qType'] == 'text')
-            TextFormField(
-                controller: controller,
-                decoration: const InputDecoration(labelText: 'Answer')
+          Text(
+            'Step ${_currentStep + 1} of 3',
+            style: const TextStyle(
+              color: AppColors.sage,
+              fontSize: 13,
             ),
-          if (question['qType'] == 'checklist')
-            ...question['option'].map<Widget>((option) {
-              String controllerKey = '$questionId-$flightNum';
-              bool isChecked = (_checkboxValues[controllerKey] ??= <String>{}).contains(option);
-              return CheckboxListTile(
-                title: Text(option),
-                value: isChecked,
-                onChanged: (bool? isSelected) {
-                  setState(() {
-                    if (isSelected ?? false) {
-                      _checkboxValues[controllerKey]?.add(option);
-                    } else {
-                      _checkboxValues[controllerKey]?.remove(option);
-                    }
-                    // Update the controller text to match the current selection state
-                    _questionControllers[controllerKey]?.text = _checkboxValues[controllerKey]?.join(', ') ?? '';
-                  });
-                },
-              );
-            }).toList(),
-          if (question['qType'] == 'dropdown')
-            DropdownButtonFormField<String>(
-              initialValue: controller.text.isEmpty ? null : controller.text,
-              onChanged: (String? newValue) {
+          ),
+
+          const SizedBox(height: 4),
+
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _titles[_currentStep],
+                  style: const TextStyle(
+                    color: AppColors.charcoal,
+                    fontSize: 27,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$percent%',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.forest,
+                    ),
+                  ),
+                  const Text(
+                    'completed',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.sage,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            _descriptions[_currentStep],
+            style: const TextStyle(
+              color: AppColors.sage,
+              fontSize: 13,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
+              value: _progress,
+              minHeight: 9,
+              backgroundColor: AppColors.softGreen,
+              color: AppColors.forest,
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          _buildStepIndicator(),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================
+  // STEP INDICATOR
+  // ==========================================
+
+  Widget _buildStepIndicator() {
+    return Row(
+      children: List.generate(3, (index) {
+        final active = index == _currentStep;
+        final finished = index < _currentStep;
+
+        return Expanded(
+          child: Column(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(
+                  milliseconds: 200,
+                ),
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: active
+                      ? AppColors.forest
+                      : finished
+                      ? AppColors.softGreen
+                      : AppColors.background,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: active
+                        ? AppColors.forest
+                        : AppColors.border,
+                  ),
+                ),
+                child: Center(
+                  child: finished
+                      ? const Icon(
+                    Icons.check_rounded,
+                    size: 18,
+                    color: AppColors.forest,
+                  )
+                      : Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: active
+                          ? Colors.white
+                          : AppColors.charcoal,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 7),
+
+              Text(
+                _titles[index],
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: active
+                      ? FontWeight.w700
+                      : FontWeight.w400,
+                  color: active
+                      ? AppColors.forest
+                      : AppColors.charcoal,
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+
+  // ==========================================
+  // CURRENT STEP CONTENT
+  // ==========================================
+
+  List<Widget> _buildCurrentStep() {
+    final section = _sectionData(_currentSection);
+
+    if (section == null) {
+      return [
+        _buildCard(
+          child: const Text(
+            'No questions in this section.',
+          ),
+        ),
+      ];
+    }
+
+    if (_currentSection == 'assessment') {
+      return [
+        _buildCard(
+          child: _buildQuestions(
+            _currentSection,
+            0,
+            _asList(section['answer']),
+          ),
+        ),
+      ];
+    }
+
+    final flights = _asList(section['answer']);
+
+    final widgets = <Widget>[];
+
+    if (flights.isEmpty) {
+      widgets.add(
+        _buildCard(
+          child: const Text(
+            'No flights in this section.',
+          ),
+        ),
+      );
+    }
+
+    for (final item in flights) {
+      final flight =
+      Map<String, dynamic>.from(item as Map);
+
+      final flightNumber =
+          (flight['flightNum'] as num?)?.toInt() ?? 1;
+
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildCard(
+            child: Column(
+              crossAxisAlignment:
+              CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.flight_takeoff_rounded,
+                      color: AppColors.forest,
+                      size: 20,
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    Text(
+                      'Flight $flightNumber',
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.charcoal,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                _buildQuestions(
+                  _currentSection,
+                  flightNumber,
+                  _asList(flight['data']),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    widgets.add(
+      _buildCard(
+        child: SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: const Text(
+            'Add new flight',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: const Text(
+            'Create another flight record when saving.',
+          ),
+          activeThumbColor: AppColors.forest,
+          activeTrackColor: AppColors.softGreen,
+          value: _currentSection == 'pre'
+              ? _addPreFlight
+              : _addPostFlight,
+          onChanged: (value) {
+            setState(() {
+              if (_currentSection == 'pre') {
+                _addPreFlight = value;
+              } else {
+                _addPostFlight = value;
+              }
+            });
+          },
+        ),
+      ),
+    );
+
+    return widgets;
+  }
+
+  // ==========================================
+  // DYNAMIC QUESTIONS
+  // ==========================================
+
+  Widget _buildQuestions(
+      String section,
+      int flightNumber,
+      List<dynamic> questions,
+      ) {
+    if (questions.isEmpty) {
+      return const Text(
+        'No questions available.',
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < questions.length; i++) ...[
+          if (i > 0)
+            const SizedBox(height: 23),
+
+          _buildQuestion(
+            section,
+            flightNumber,
+            i,
+            Map<String, dynamic>.from(
+              questions[i] as Map,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // ==========================================
+  // QUESTION FIELD
+  // ==========================================
+
+  Widget _buildQuestion(
+      String section,
+      int flightNumber,
+      int index,
+      Map<String, dynamic> question,
+      ) {
+    final key = _key(
+      section,
+      flightNumber,
+      index,
+    );
+
+    final controller = _controllers[key]!;
+
+    final type =
+        question['qType']?.toString() ?? '';
+
+    final options = _asList(question['option'])
+        .map((e) => e.toString())
+        .toList();
+
+    final required = _requiredKeys.contains(key);
+
+    final invalid =
+        _showErrors && !_questionValid(key, question);
+
+    Widget input;
+
+    switch (type) {
+    // TEXT & LONGTEXT
+      case 'text':
+      case 'longtext':
+        input = TextFormField(
+          controller: controller,
+          maxLines: type == 'longtext' ? 4 : 1,
+          minLines: type == 'longtext' ? 3 : 1,
+          onChanged: (_) {
+            if (_showErrors) {
+              setState(() {});
+            }
+          },
+          decoration: InputDecoration(
+            hintText: type == 'longtext'
+                ? 'Write your notes...'
+                : 'Answer',
+            errorText: invalid
+                ? 'This field is required'
+                : null,
+          ),
+        );
+        break;
+
+    // DROPDOWN
+      case 'dropdown':
+        final selection =
+        options.contains(controller.text) &&
+            controller.text.isNotEmpty
+            ? controller.text
+            : null;
+
+        input = DropdownButtonFormField<String>(
+          key: ValueKey(
+            'dropdown:$key:$selection',
+          ),
+          initialValue: selection,
+          isExpanded: true,
+          items: options.map((option) {
+            return DropdownMenuItem<String>(
+              value: option,
+              child: Text(option),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              controller.text = value ?? '';
+            });
+          },
+          decoration: InputDecoration(
+            hintText: 'Select one',
+            errorText: invalid
+                ? 'Please select an option'
+                : null,
+          ),
+        );
+        break;
+
+    // SINGLE CHOICE (RADIO)
+      case 'multiple':
+        input = Column(
+          children: options.map((option) {
+            return _buildOptionTile(
+              label: option,
+              selected: controller.text == option,
+              checkbox: false,
+              onTap: () {
                 setState(() {
-                  controller.text = newValue ?? '';
+                  controller.text = option;
                 });
               },
-              items: options.map<DropdownMenuItem<String>>((option) {
-                return DropdownMenuItem<String>(
-                  value: option,
-                  child: Text(option),
-                );
-              }).toList(),
-              decoration: const InputDecoration(labelText: 'Select one'),
-            ),
-          if (question['qType'] == 'multiple')
-            ...question['option'].map<Widget>((option) {
-              return RadioListTile<String>(
-                title: Text(option),
-                value: option,
-                groupValue: _multipleValues[questionId] ?? question['answer'],
-                onChanged: (String? value) {
-                  setState(() {
-                    _multipleValues[questionId] = value!;
-                    _questionControllers[questionId]?.text = value ?? '';
-                  });
-                },
-              );
-            }).toList(),
-          if (question['qType'] == 'longtext')
-            TextFormField(
-              maxLines: null,
-              controller: controller,
-              decoration: const InputDecoration(labelText: "Answer"),
-              validator: (value) {
-                if (question['required'] && (value == null || value.isEmpty)) {
-                  return 'This field cannot be empty';
-                }
-                return null;
-              },
-              keyboardType: TextInputType.multiline,
-              onChanged: (value) {
+            );
+          }).toList(),
+        );
+        break;
+
+    // CHECKLIST
+      case 'checklist':
+        input = Column(
+          children: options.map((option) {
+            return _buildOptionTile(
+              label: option,
+              selected:
+              _checkedOptions[key]?.contains(option) ??
+                  false,
+              checkbox: true,
+              onTap: () {
                 setState(() {
-                  _textboxValues[questionId] = value;
-                  controller.text = value;
+                  final values =
+                  _checkedOptions.putIfAbsent(
+                    key,
+                        () => <String>{},
+                  );
+
+                  if (!values.add(option)) {
+                    values.remove(option);
+                  }
                 });
               },
+            );
+          }).toList(),
+        );
+        break;
+
+      default:
+        input = const Text(
+          'Unsupported question type.',
+        );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          question['questionName']?.toString() ??
+              'Question',
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: AppColors.charcoal,
+          ),
+        ),
+
+        if (required) ...[
+          const SizedBox(height: 4),
+          const Text(
+            'Required',
+            style: TextStyle(
+              fontSize: 11,
+              color: AppColors.sage,
             ),
+          ),
+        ],
+
+        const SizedBox(height: 10),
+
+        input,
+
+        if (invalid &&
+            (type == 'multiple' ||
+                type == 'checklist'))
+          const Padding(
+            padding: EdgeInsets.only(top: 3),
+            child: Text(
+              'Please select at least one option',
+              style: TextStyle(
+                color: Color(0xFFC94444),
+                fontSize: 12,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ==========================================
+  // CUSTOM OPTION TILE
+  // ==========================================
+
+  Widget _buildOptionTile({
+    required String label,
+    required bool selected,
+    required bool checkbox,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: selected
+            ? AppColors.softGreen
+            : AppColors.background,
+        borderRadius: BorderRadius.circular(13),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(13),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 13,
+              vertical: 12,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(
+                color: selected
+                    ? AppColors.sage
+                    : AppColors.border,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  checkbox
+                      ? selected
+                      ? Icons.check_box_rounded
+                      : Icons
+                      .check_box_outline_blank_rounded
+                      : selected
+                      ? Icons
+                      .radio_button_checked_rounded
+                      : Icons
+                      .radio_button_off_rounded,
+                  color: selected
+                      ? AppColors.forest
+                      : AppColors.charcoal,
+                  size: 22,
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.charcoal,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==========================================
+  // CARD STYLE
+  // ==========================================
+
+  Widget _buildCard({
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: AppColors.border,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.charcoal.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  // ==========================================
+  // BOTTOM NAVIGATION
+  // ==========================================
+
+  Widget _buildFooter() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.border,
+          ),
+        ),
+      ),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        MediaQuery.of(context).padding.bottom + 12,
+      ),
+      child: Row(
+        children: [
+          if (_currentStep > 0) ...[
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _saving ? null : _back,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.charcoal,
+                  backgroundColor: AppColors.softGreen,
+                  side: BorderSide.none,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 15,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                    BorderRadius.circular(14),
+                  ),
+                ),
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                ),
+                label: const Text('Back'),
+              ),
+            ),
+
+            const SizedBox(width: 12),
+          ],
+
+          Expanded(
+            flex: _currentStep > 0 ? 1 : 2,
+            child: FilledButton.icon(
+              onPressed: _saving ? null : _next,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.forest,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 15,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                  BorderRadius.circular(14),
+                ),
+              ),
+              icon: _saving
+                  ? const SizedBox(
+                width: 17,
+                height: 17,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+                  : Icon(
+                _currentStep == 2
+                    ? Icons.check_rounded
+                    : Icons.arrow_forward_rounded,
+              ),
+              label: Text(
+                _saving ? 'Saving...' : _currentStep == 2 ? 'Finish & Save' : 'Next',
+              ),
+            ),
+          ),
         ],
       ),
     );
